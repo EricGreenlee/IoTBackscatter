@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import argparse
 import logging
-import os
 import sys
 
+import IoTBSConst
 import sim_cdma
 
 # ----------------------------
@@ -49,6 +49,24 @@ def configure_logging(verbosity_level: int):
 def get_simulated_samples():
     logger.debug("Generating simulated samples")
     
+    # p = Packet(goldcode=[1,0,1,1,0,1,0,1], preamble = [1, 1, 1, 1], sync_word = [1, 0, 1, 0], bits= [0, 0, 0, 0], samples_per_signal=4)
+    # print(p)
+
+    # Non-ideal simulated packet
+    sp = IoTBSConst.SimulatedPacket(
+        goldcode_number = 0,
+        goldcode=IoTBSConst.GCs[0],
+        preamble_bits = [1, 1, 1, 1],
+        sync_bits = [1, 0, 1, 0],
+        payload_bits=[0, 0, 0, 0],
+        samples_per_signal=4,
+        snr_db=15.0,
+        frequency_offset_hz=500.0,
+        time_delay_sec=0.002
+    )
+    # print(sp.summary())
+    logger.info("simulated packet metadata: %s", sp)
+    
     sim_packet = sim_cdma.gen_ideal_packet()
     return sim_packet
 
@@ -62,8 +80,7 @@ def get_sdr_samples():
 
 def run_demodulator(samples):
     logger.info(f"Processing {len(samples)} samples")
-    logger.debug("Demodulator debug info")
-    logger.info("Demodulation complete")
+
 
 # ----------------------------
 # CLI
@@ -104,4 +121,7 @@ def main():
     run_demodulator(samples)
 
 if __name__ == "__main__":
+    main()
+if __name__ == "__main__":
+    main()
     main()
