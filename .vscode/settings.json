@@ -1,0 +1,15 @@
+{
+    "python.defaultInterpreterPath": "python/.venv/bin/python",
+    // Enable linting
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true,
+    // Format on save
+    "editor.formatOnSave": true,
+    "python.formatting.provider": "black",
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": true
+    },
+    // Show linting feedback in Problems panel + inline
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.typeCheckingMode": "basic"
+}

@@ -1,0 +1,138 @@
+2025-08-25 16:59:03 [DEBUG] CLI arguments: Namespace(source='sim', file=None, verbose=0)
+2025-08-25 16:59:03 [INFO] Generating simulated samples
+2025-08-25 16:59:03 [DEBUG] Simulated samples debug info
+2025-08-25 16:59:03 [INFO] Processing 4 samples
+2025-08-25 16:59:03 [DEBUG] Demodulator debug info
+2025-08-25 16:59:03 [INFO] Demodulation complete
+2025-08-25 16:59:03 [ERROR] Test error message
+2025-08-25 16:59:20 [DEBUG] CLI arguments: Namespace(source='sim', file=None, verbose=0)
+2025-08-25 16:59:20 [INFO] Generating simulated samples
+2025-08-25 16:59:20 [DEBUG] Simulated samples debug info
+2025-08-25 16:59:20 [INFO] Processing 4 samples
+2025-08-25 16:59:20 [DEBUG] Demodulator debug info
+2025-08-25 16:59:20 [INFO] Demodulation complete
+2025-08-25 16:59:20 [ERROR] Test error message
+2025-08-25 17:00:18 [DEBUG] CLI arguments: Namespace(source='sim', file=None, verbose=2)
+2025-08-25 17:00:18 [INFO] Generating simulated samples
+2025-08-25 17:00:18 [DEBUG] Simulated samples debug info
+2025-08-25 17:00:18 [INFO] Processing 4 samples
+2025-08-25 17:00:18 [DEBUG] Demodulator debug info
+2025-08-25 17:00:18 [INFO] Demodulation complete
+2025-08-25 17:00:18 [ERROR] Test error message
+2025-08-25 17:00:58 [DEBUG] CLI arguments: Namespace(source='sim', file=None, verbose=2)
+2025-08-25 17:00:58 [INFO] Generating simulated samples
+2025-08-25 17:00:58 [DEBUG] Simulated samples debug info
+2025-08-25 17:00:58 [INFO] Processing 4 samples
+2025-08-25 17:00:58 [DEBUG] Demodulator debug info
+2025-08-25 17:00:58 [INFO] Demodulation complete
+2025-08-25 17:00:58 [ERROR] Test error message
+2025-08-25 17:00:58 [WARNING] Test warning message
+2025-08-25 17:00:58 [INFO] test infor message
+2025-08-25 17:00:58 [DEBUG] test debug message
+2025-08-25 17:01:07 [DEBUG] CLI arguments: Namespace(source='sim', file=None, verbose=3)
+2025-08-25 17:01:07 [INFO] Generating simulated samples
+2025-08-25 17:01:07 [DEBUG] Simulated samples debug info
+2025-08-25 17:01:07 [INFO] Processing 4 samples
+2025-08-25 17:01:07 [DEBUG] Demodulator debug info
+2025-08-25 17:01:07 [INFO] Demodulation complete
+2025-08-25 17:01:07 [ERROR] Test error message
+2025-08-25 17:01:07 [WARNING] Test warning message
+2025-08-25 17:01:07 [INFO] test infor message
+2025-08-25 17:01:07 [DEBUG] test debug message
+2025-08-25 17:01:36 [DEBUG] CLI arguments: Namespace(source='sim', file=None, verbose=3)
+2025-08-25 17:01:36 [INFO] Generating simulated samples
+2025-08-25 17:01:36 [DEBUG] Simulated samples debug info
+2025-08-25 17:01:36 [INFO] Processing 4 samples
+2025-08-25 17:01:36 [DEBUG] Demodulator debug info
+2025-08-25 17:01:36 [INFO] Demodulation complete
+2025-08-25 17:01:36 [ERROR] Test error message
+2025-08-25 17:01:36 [WARNING] Test warning message
+2025-08-25 17:01:36 [INFO] test info message
+2025-08-25 17:01:36 [DEBUG] test debug message
+2025-08-25 17:01:42 [DEBUG] CLI arguments: Namespace(source='sim', file=None, verbose=4)
+2025-08-25 17:01:42 [INFO] Generating simulated samples
+2025-08-25 17:01:42 [DEBUG] Simulated samples debug info
+2025-08-25 17:01:42 [INFO] Processing 4 samples
+2025-08-25 17:01:42 [DEBUG] Demodulator debug info
+2025-08-25 17:01:42 [INFO] Demodulation complete
+2025-08-25 17:01:42 [ERROR] Test error message
+2025-08-25 17:01:42 [WARNING] Test warning message
+2025-08-25 17:01:42 [INFO] test info message
+2025-08-25 17:01:42 [DEBUG] test debug message
+2025-08-25 17:01:45 [DEBUG] CLI arguments: Namespace(source='sim', file=None, verbose=2)
+2025-08-25 17:01:45 [INFO] Generating simulated samples
+2025-08-25 17:01:45 [DEBUG] Simulated samples debug info
+2025-08-25 17:01:45 [INFO] Processing 4 samples
+2025-08-25 17:01:45 [DEBUG] Demodulator debug info
+2025-08-25 17:01:45 [INFO] Demodulation complete
+2025-08-25 17:01:45 [ERROR] Test error message
+2025-08-25 17:01:45 [WARNING] Test warning message
+2025-08-25 17:01:45 [INFO] test info message
+2025-08-25 17:01:45 [DEBUG] test debug message
+2025-08-25 17:01:52 [DEBUG] CLI arguments: Namespace(source='sim', file=None, verbose=1)
+2025-08-25 17:01:52 [INFO] Generating simulated samples
+2025-08-25 17:01:52 [DEBUG] Simulated samples debug info
+2025-08-25 17:01:52 [INFO] Processing 4 samples
+2025-08-25 17:01:52 [DEBUG] Demodulator debug info
+2025-08-25 17:01:52 [INFO] Demodulation complete
+2025-08-25 17:01:52 [ERROR] Test error message
+2025-08-25 17:01:52 [WARNING] Test warning message
+2025-08-25 17:01:52 [INFO] test info message
+2025-08-25 17:01:52 [DEBUG] test debug message
+2025-08-25 17:01:57 [DEBUG] CLI arguments: Namespace(source='sim', file=None, verbose=2)
+2025-08-25 17:01:57 [INFO] Generating simulated samples
+2025-08-25 17:01:57 [DEBUG] Simulated samples debug info
+2025-08-25 17:01:57 [INFO] Processing 4 samples
+2025-08-25 17:01:57 [DEBUG] Demodulator debug info
+2025-08-25 17:01:57 [INFO] Demodulation complete
+2025-08-25 17:01:57 [ERROR] Test error message
+2025-08-25 17:01:57 [WARNING] Test warning message
+2025-08-25 17:01:57 [INFO] test info message
+2025-08-25 17:01:57 [DEBUG] test debug message
+2025-08-25 17:01:59 [DEBUG] CLI arguments: Namespace(source='sim', file=None, verbose=3)
+2025-08-25 17:01:59 [INFO] Generating simulated samples
+2025-08-25 17:01:59 [DEBUG] Simulated samples debug info
+2025-08-25 17:01:59 [INFO] Processing 4 samples
+2025-08-25 17:01:59 [DEBUG] Demodulator debug info
+2025-08-25 17:01:59 [INFO] Demodulation complete
+2025-08-25 17:01:59 [ERROR] Test error message
+2025-08-25 17:01:59 [WARNING] Test warning message
+2025-08-25 17:01:59 [INFO] test info message
+2025-08-25 17:01:59 [DEBUG] test debug message
+2025-08-25 17:03:51 [DEBUG] CLI arguments: Namespace(source='sim', file=None, verbose=3)
+2025-08-25 17:03:51 [INFO] Generating simulated samples
+2025-08-25 17:03:51 [DEBUG] Simulated samples debug info
+2025-08-25 17:03:51 [INFO] [1, 2, 3, 4]
+2025-08-25 17:03:51 [INFO] Processing 4 samples
+2025-08-25 17:03:51 [DEBUG] Demodulator debug info
+2025-08-25 17:03:51 [INFO] Demodulation complete
+2025-08-25 17:03:51 [ERROR] Test error message
+2025-08-25 17:03:51 [WARNING] Test warning message
+2025-08-25 17:03:51 [INFO] test info message
+2025-08-25 17:03:51 [DEBUG] test debug message
+2025-08-25 17:04:05 [DEBUG] CLI arguments: Namespace(source='sim', file=None, verbose=2)
+2025-08-25 17:04:05 [INFO] Generating simulated samples
+2025-08-25 17:04:05 [DEBUG] Simulated samples debug info
+2025-08-25 17:04:05 [INFO] [1, 2, 3, 4]
+2025-08-25 17:04:05 [INFO] Processing 4 samples
+2025-08-25 17:04:05 [DEBUG] Demodulator debug info
+2025-08-25 17:04:05 [INFO] Demodulation complete
+2025-08-25 17:04:05 [ERROR] Test error message
+2025-08-25 17:04:05 [WARNING] Test warning message
+2025-08-25 17:04:05 [INFO] test info message
+2025-08-25 17:04:05 [DEBUG] test debug message
+2025-08-25 17:05:19 [DEBUG] CLI arguments: Namespace(source='sim', file=None, verbose=2)
+2025-08-25 17:05:19 [DEBUG] Generating simulated samples
+2025-08-25 17:05:19 [INFO] Processing 4 samples
+2025-08-25 17:05:19 [DEBUG] Demodulator debug info
+2025-08-25 17:05:19 [INFO] Demodulation complete
+2025-08-25 17:05:19 [ERROR] Test error message
+2025-08-25 17:05:19 [WARNING] Test warning message
+2025-08-25 17:05:19 [INFO] test info message
+2025-08-25 17:05:19 [DEBUG] test debug message
+2025-08-25 17:06:06 [DEBUG] CLI arguments: Namespace(source='sim', file=None, verbose=2)
+2025-08-25 17:06:06 [DEBUG] Generating simulated samples
+2025-08-25 17:06:06 [INFO] packet to demod: [1, 2, 3, 4]
+2025-08-25 17:06:06 [INFO] Processing 4 samples
+2025-08-25 17:06:06 [DEBUG] Demodulator debug info
+2025-08-25 17:06:06 [INFO] Demodulation complete
