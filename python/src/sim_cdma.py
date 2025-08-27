@@ -1,2 +1,3 @@
-def gen_ideal_packet():
-    return [1, 2, 3, 4]
+import numpy as np
+
+# from main import logger

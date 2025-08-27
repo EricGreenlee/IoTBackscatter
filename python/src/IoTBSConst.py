@@ -3,29 +3,35 @@ from typing import List, Optional
 
 import numpy as np
 
+# from main import logger
 
+# Ideal packet
 @dataclass
 class Packet:
-    goldcode_number: int
-    goldcode: List[int]                # e.g., [1,0,1,1,...]
-    preamble_bits: List[int]           # preamble
-    sync_bits: List[int]               # sync sequence
-    payload_bits: List[int]            # payload
-    samples_per_signal: int            # samples per chip/bit
+    tag_id: int         
+    preamble_bits: np.ndarray           # preamble
+    sync_bits: np.ndarray               # sync sequence
+    payload_bits: np.ndarray           # payload
+    sps: int            # samples per chip/bit
 
     # computed fields
     all_bits: List[int] = field(init=False)   # concatenated bits
+    goldcode: List[int] = field(init=False)     
+    
     samples: Optional[List[float]] = field(default=None)  # computed later
 
     def __post_init__(self):
         # Concatenate preamble, sync, and payload
-        self.all_bits = self.preamble_bits + self.sync_bits + self.payload_bits
+        self.goldcode = GCs[self.tag_id]
+        self.all_bits = np.concatenate([self.preamble_bits, self.sync_bits, self.payload_bits])
         
-        #generate samples by replicating goldcode by samples per signal and extending it for each bit
+    def gen_ideal_samples(self):
+        self.samples = np.zeros(self.sps*len(self.goldcode)*len(self.all_bits)).astype(np.complex64)
+        for i, bit in enumerate(self.all_bits):
+            self.samples[i*self.sps*len(self.goldcode):(i+1)*self.sps*len(self.goldcode)] = np.repeat(self.goldcode.astype(np.complex64)*(bit*2-1),self.sps)
 
-# ----------------------------
+
 # Non-Ideal Simulated Packet
-# ----------------------------
 @dataclass
 class SimulatedPacket(Packet):
     snr_db: float = 30.0          # Signal-to-noise ratio in dB
@@ -35,9 +41,15 @@ class SimulatedPacket(Packet):
     def summary(self):
         return (f"SimPacket: bits={self.all_bits},\n "
                 f"Goldcode={self.goldcode},\n"
-                f"samples_per_signal={self.samples_per_signal}, "
+                f"samples_per_signal={self.sps}, "
                 f"SNR={self.snr_db} dB, freq_offset={self.frequency_offset_hz} Hz, "
                 f"time_delay={self.time_delay_sec}s")
+
+#
+@dataclass
+class RadioSettings:
+    samplerate_hz: int
+    carrier_freq_hz: int
 
 # Goldcodes
 GCs = np.array([
@@ -55,3 +67,7 @@ GCs = np.array([
 
 gc_len = len(GCs[0])
 num_gcs = len(GCs)
+
+#Preamble and sync words
+preamble = np.array([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1])
+sync_seq = np.array([0,1,0,1,1,0,0,1,1,1,1,1,0,0,0,0])

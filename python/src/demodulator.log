@@ -309,3 +309,578 @@ samples_per_signal=4, SNR=15.0 dB, freq_offset=500.0 Hz, time_delay=0.002s
         1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], samples_per_signal=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
 2025-08-25 17:51:29 [INFO] Packet to demod: [1, 2, 3, 4]
 2025-08-25 17:51:29 [INFO] Processing 4 samples
+2025-08-26 15:42:13 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=2)
+2025-08-26 15:42:13 [DEBUG] Generating simulated samples
+2025-08-26 15:42:13 [INFO] simulated packet metadata: SimulatedPacket(goldcode_number=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], samples_per_signal=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 15:42:13 [INFO] Packet to demod: [1, 2, 3, 4]
+2025-08-26 15:42:13 [INFO] Processing 4 samples
+2025-08-26 15:42:13 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=2)
+2025-08-26 15:42:13 [DEBUG] Generating simulated samples
+2025-08-26 15:42:13 [INFO] simulated packet metadata: SimulatedPacket(goldcode_number=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], samples_per_signal=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 15:42:13 [INFO] Packet to demod: [1, 2, 3, 4]
+2025-08-26 15:42:13 [INFO] Processing 4 samples
+2025-08-26 15:42:13 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=2)
+2025-08-26 15:42:13 [DEBUG] Generating simulated samples
+2025-08-26 15:42:13 [INFO] simulated packet metadata: SimulatedPacket(goldcode_number=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], samples_per_signal=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 15:42:13 [INFO] Packet to demod: [1, 2, 3, 4]
+2025-08-26 15:42:13 [INFO] Processing 4 samples
+2025-08-26 15:45:10 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=2, n_tags=2)
+2025-08-26 15:45:42 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=2, n_tags=2)
+2025-08-26 15:45:42 [DEBUG] Generating simulated samples
+2025-08-26 15:45:42 [INFO] simulated packet metadata: SimulatedPacket(goldcode_number=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], samples_per_signal=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 15:45:42 [INFO] Packet to demod: [1, 2, 3, 4]
+2025-08-26 15:45:42 [INFO] Processing 4 samples
+2025-08-26 15:45:42 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=2, n_tags=2)
+2025-08-26 15:45:42 [DEBUG] Generating simulated samples
+2025-08-26 15:45:42 [INFO] simulated packet metadata: SimulatedPacket(goldcode_number=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], samples_per_signal=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 15:45:42 [INFO] Packet to demod: [1, 2, 3, 4]
+2025-08-26 15:45:42 [INFO] Processing 4 samples
+2025-08-26 15:45:42 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=2, n_tags=2)
+2025-08-26 15:45:42 [DEBUG] Generating simulated samples
+2025-08-26 15:45:42 [INFO] simulated packet metadata: SimulatedPacket(goldcode_number=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], samples_per_signal=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 15:45:42 [INFO] Packet to demod: [1, 2, 3, 4]
+2025-08-26 15:45:42 [INFO] Processing 4 samples
+2025-08-26 15:45:57 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 15:45:57 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 15:45:57 [INFO] simulated packet metadata: SimulatedPacket(goldcode_number=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], samples_per_signal=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 15:45:57 [INFO] Packet to demod: [1, 2, 3, 4]
+2025-08-26 15:45:57 [INFO] Processing 4 samples
+2025-08-26 15:45:57 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 15:45:57 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 15:45:57 [INFO] simulated packet metadata: SimulatedPacket(goldcode_number=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], samples_per_signal=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 15:45:57 [INFO] Packet to demod: [1, 2, 3, 4]
+2025-08-26 15:45:57 [INFO] Processing 4 samples
+2025-08-26 15:45:57 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 15:45:57 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 15:45:57 [INFO] simulated packet metadata: SimulatedPacket(goldcode_number=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], samples_per_signal=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 15:45:57 [INFO] Packet to demod: [1, 2, 3, 4]
+2025-08-26 15:45:57 [INFO] Processing 4 samples
+2025-08-26 15:48:55 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 15:48:55 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 15:48:55 [INFO] simulated packet metadata: SimulatedPacket(goldcode_number=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], samples_per_signal=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 15:49:17 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 15:49:17 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 15:49:17 [INFO] simulated packet metadata: SimulatedPacket(goldcode_number=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], samples_per_signal=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 15:49:17 [INFO] test in gen_ideal_packet
+2025-08-26 15:49:17 [INFO] Packet to demod: [1, 2, 3, 4]
+2025-08-26 15:49:17 [INFO] Processing 4 samples
+2025-08-26 15:49:17 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 15:49:17 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 15:49:17 [INFO] simulated packet metadata: SimulatedPacket(goldcode_number=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], samples_per_signal=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 15:49:17 [INFO] test in gen_ideal_packet
+2025-08-26 15:49:17 [INFO] Packet to demod: [1, 2, 3, 4]
+2025-08-26 15:49:17 [INFO] Processing 4 samples
+2025-08-26 15:49:17 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 15:49:17 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 15:49:17 [INFO] simulated packet metadata: SimulatedPacket(goldcode_number=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], samples_per_signal=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 15:49:17 [INFO] test in gen_ideal_packet
+2025-08-26 15:49:17 [INFO] Packet to demod: [1, 2, 3, 4]
+2025-08-26 15:49:17 [INFO] Processing 4 samples
+2025-08-26 15:55:09 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 15:55:09 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 15:56:14 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 15:56:14 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 15:56:56 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 15:56:56 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 15:57:58 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 15:57:58 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 15:58:41 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 15:58:41 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 15:58:41 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 15:58:41 [DEBUG] gen_ideal_packet for tag #0
+2025-08-26 15:58:41 [INFO] Packet to demod: [0.+0.j 0.+0.j 0.+0.j ... 0.+0.j 0.+0.j 0.+0.j]
+2025-08-26 15:58:41 [INFO] Processing 6096 samples
+2025-08-26 15:58:41 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 15:58:41 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 15:58:41 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 15:58:41 [DEBUG] gen_ideal_packet for tag #0
+2025-08-26 15:58:41 [INFO] Packet to demod: [0.+0.j 0.+0.j 0.+0.j ... 0.+0.j 0.+0.j 0.+0.j]
+2025-08-26 15:58:41 [INFO] Processing 6096 samples
+2025-08-26 15:58:41 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 15:58:41 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 15:58:41 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 15:58:41 [DEBUG] gen_ideal_packet for tag #0
+2025-08-26 15:58:41 [INFO] Packet to demod: [0.+0.j 0.+0.j 0.+0.j ... 0.+0.j 0.+0.j 0.+0.j]
+2025-08-26 15:58:41 [INFO] Processing 6096 samples
+2025-08-26 16:03:36 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:03:36 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:03:36 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:03:36 [INFO] Packet to demod: None
+2025-08-26 16:08:56 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:08:56 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:08:56 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:08:56 [INFO] Packet to demod: [0.+0.j 0.+0.j 0.+0.j ... 0.+0.j 0.+0.j 0.+0.j]
+2025-08-26 16:08:56 [INFO] Processing 6096 samples
+2025-08-26 16:08:56 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:08:56 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:08:56 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:08:56 [INFO] Packet to demod: [0.+0.j 0.+0.j 0.+0.j ... 0.+0.j 0.+0.j 0.+0.j]
+2025-08-26 16:08:56 [INFO] Processing 6096 samples
+2025-08-26 16:08:56 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:08:56 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:08:56 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:08:56 [INFO] Packet to demod: [0.+0.j 0.+0.j 0.+0.j ... 0.+0.j 0.+0.j 0.+0.j]
+2025-08-26 16:08:56 [INFO] Processing 6096 samples
+2025-08-26 16:12:05 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:12:05 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:12:05 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:12:05 [INFO] Packet to demod: [-1.+0.j -1.+0.j -1.+0.j ...  1.-0.j  1.-0.j  1.-0.j]
+2025-08-26 16:12:05 [INFO] Processing 6096 samples
+2025-08-26 16:12:05 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:12:05 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:12:05 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:12:05 [INFO] Packet to demod: [-1.+0.j -1.+0.j -1.+0.j ...  1.-0.j  1.-0.j  1.-0.j]
+2025-08-26 16:12:05 [INFO] Processing 6096 samples
+2025-08-26 16:12:05 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:12:05 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:12:05 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:12:05 [INFO] Packet to demod: [-1.+0.j -1.+0.j -1.+0.j ...  1.-0.j  1.-0.j  1.-0.j]
+2025-08-26 16:12:05 [INFO] Processing 6096 samples
+2025-08-26 16:12:19 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:12:19 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:12:19 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, goldcode=array([ 1,  1, -1, -1, -1, -1, -1,  1,  1, -1, -1, -1, -1,  1,  1,  1, -1,
+       -1, -1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1, -1,
+        1, -1,  1,  1, -1,  1,  1, -1, -1, -1, -1,  1, -1, -1,  1, -1, -1,
+       -1, -1,  1, -1, -1,  1,  1, -1,  1,  1, -1,  1,  1, -1,  1, -1,  1,
+       -1,  1, -1, -1,  1, -1, -1,  1,  1,  1,  1, -1,  1, -1,  1, -1, -1,
+       -1,  1,  1, -1, -1,  1, -1, -1,  1, -1, -1, -1,  1,  1,  1, -1, -1,
+       -1,  1, -1, -1,  1,  1, -1,  1,  1, -1, -1, -1, -1,  1, -1, -1, -1,
+       -1, -1, -1, -1, -1,  1, -1,  1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:12:19 [INFO] Packet to demod: [ 1.+0.j  1.+0.j  1.+0.j ... -1.+0.j -1.+0.j -1.+0.j]
+2025-08-26 16:12:19 [INFO] Processing 6096 samples
+2025-08-26 16:12:19 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:12:19 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:12:19 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, goldcode=array([ 1,  1, -1, -1, -1, -1, -1,  1,  1, -1, -1, -1, -1,  1,  1,  1, -1,
+       -1, -1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1, -1,
+        1, -1,  1,  1, -1,  1,  1, -1, -1, -1, -1,  1, -1, -1,  1, -1, -1,
+       -1, -1,  1, -1, -1,  1,  1, -1,  1,  1, -1,  1,  1, -1,  1, -1,  1,
+       -1,  1, -1, -1,  1, -1, -1,  1,  1,  1,  1, -1,  1, -1,  1, -1, -1,
+       -1,  1,  1, -1, -1,  1, -1, -1,  1, -1, -1, -1,  1,  1,  1, -1, -1,
+       -1,  1, -1, -1,  1,  1, -1,  1,  1, -1, -1, -1, -1,  1, -1, -1, -1,
+       -1, -1, -1, -1, -1,  1, -1,  1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:12:19 [INFO] Packet to demod: [ 1.+0.j  1.+0.j  1.+0.j ... -1.+0.j -1.+0.j -1.+0.j]
+2025-08-26 16:12:19 [INFO] Processing 6096 samples
+2025-08-26 16:12:19 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:12:19 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:12:19 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, goldcode=array([ 1,  1, -1, -1, -1, -1, -1,  1,  1, -1, -1, -1, -1,  1,  1,  1, -1,
+       -1, -1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1, -1,
+        1, -1,  1,  1, -1,  1,  1, -1, -1, -1, -1,  1, -1, -1,  1, -1, -1,
+       -1, -1,  1, -1, -1,  1,  1, -1,  1,  1, -1,  1,  1, -1,  1, -1,  1,
+       -1,  1, -1, -1,  1, -1, -1,  1,  1,  1,  1, -1,  1, -1,  1, -1, -1,
+       -1,  1,  1, -1, -1,  1, -1, -1,  1, -1, -1, -1,  1,  1,  1, -1, -1,
+       -1,  1, -1, -1,  1,  1, -1,  1,  1, -1, -1, -1, -1,  1, -1, -1, -1,
+       -1, -1, -1, -1, -1,  1, -1,  1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=4, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:12:19 [INFO] Packet to demod: [ 1.+0.j  1.+0.j  1.+0.j ... -1.+0.j -1.+0.j -1.+0.j]
+2025-08-26 16:12:19 [INFO] Processing 6096 samples
+2025-08-26 16:12:40 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:12:40 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:12:40 [INFO] simulated packet metadata: SimulatedPacket(tag_id=1, goldcode=array([ 1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1, -1, -1,  1, -1, -1,
+       -1,  1, -1, -1,  1, -1,  1,  1,  1, -1, -1, -1,  1,  1, -1, -1,  1,
+        1,  1, -1,  1,  1,  1,  1,  1,  1, -1, -1, -1,  1,  1, -1,  1,  1,
+        1, -1,  1, -1, -1,  1, -1,  1,  1,  1, -1, -1, -1,  1, -1, -1, -1,
+        1,  1, -1,  1,  1,  1,  1, -1, -1,  1,  1,  1,  1, -1, -1,  1,  1,
+       -1, -1, -1,  1, -1, -1, -1,  1,  1,  1, -1, -1,  1,  1,  1, -1,  1,
+       -1,  1, -1, -1, -1,  1,  1,  1,  1,  1, -1, -1, -1, -1,  1, -1,  1,
+       -1,  1,  1,  1, -1,  1, -1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=1, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:12:40 [INFO] Packet to demod: [ 1.+0.j -1.+0.j -1.+0.j ... -1.+0.j  1.-0.j  1.-0.j]
+2025-08-26 16:12:40 [INFO] Processing 1524 samples
+2025-08-26 16:12:40 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:12:40 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:12:40 [INFO] simulated packet metadata: SimulatedPacket(tag_id=1, goldcode=array([ 1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1, -1, -1,  1, -1, -1,
+       -1,  1, -1, -1,  1, -1,  1,  1,  1, -1, -1, -1,  1,  1, -1, -1,  1,
+        1,  1, -1,  1,  1,  1,  1,  1,  1, -1, -1, -1,  1,  1, -1,  1,  1,
+        1, -1,  1, -1, -1,  1, -1,  1,  1,  1, -1, -1, -1,  1, -1, -1, -1,
+        1,  1, -1,  1,  1,  1,  1, -1, -1,  1,  1,  1,  1, -1, -1,  1,  1,
+       -1, -1, -1,  1, -1, -1, -1,  1,  1,  1, -1, -1,  1,  1,  1, -1,  1,
+       -1,  1, -1, -1, -1,  1,  1,  1,  1,  1, -1, -1, -1, -1,  1, -1,  1,
+       -1,  1,  1,  1, -1,  1, -1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=1, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:12:40 [INFO] Packet to demod: [ 1.+0.j -1.+0.j -1.+0.j ... -1.+0.j  1.-0.j  1.-0.j]
+2025-08-26 16:12:40 [INFO] Processing 1524 samples
+2025-08-26 16:12:40 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:12:40 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:12:40 [INFO] simulated packet metadata: SimulatedPacket(tag_id=1, goldcode=array([ 1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1, -1, -1,  1, -1, -1,
+       -1,  1, -1, -1,  1, -1,  1,  1,  1, -1, -1, -1,  1,  1, -1, -1,  1,
+        1,  1, -1,  1,  1,  1,  1,  1,  1, -1, -1, -1,  1,  1, -1,  1,  1,
+        1, -1,  1, -1, -1,  1, -1,  1,  1,  1, -1, -1, -1,  1, -1, -1, -1,
+        1,  1, -1,  1,  1,  1,  1, -1, -1,  1,  1,  1,  1, -1, -1,  1,  1,
+       -1, -1, -1,  1, -1, -1, -1,  1,  1,  1, -1, -1,  1,  1,  1, -1,  1,
+       -1,  1, -1, -1, -1,  1,  1,  1,  1,  1, -1, -1, -1, -1,  1, -1,  1,
+       -1,  1,  1,  1, -1,  1, -1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=1, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:12:40 [INFO] Packet to demod: [ 1.+0.j -1.+0.j -1.+0.j ... -1.+0.j  1.-0.j  1.-0.j]
+2025-08-26 16:12:40 [INFO] Processing 1524 samples
+2025-08-26 16:13:14 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:13:14 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:13:14 [INFO] simulated packet metadata: SimulatedPacket(tag_id=1, goldcode=array([ 1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1, -1, -1,  1, -1, -1,
+       -1,  1, -1, -1,  1, -1,  1,  1,  1, -1, -1, -1,  1,  1, -1, -1,  1,
+        1,  1, -1,  1,  1,  1,  1,  1,  1, -1, -1, -1,  1,  1, -1,  1,  1,
+        1, -1,  1, -1, -1,  1, -1,  1,  1,  1, -1, -1, -1,  1, -1, -1, -1,
+        1,  1, -1,  1,  1,  1,  1, -1, -1,  1,  1,  1,  1, -1, -1,  1,  1,
+       -1, -1, -1,  1, -1, -1, -1,  1,  1,  1, -1, -1,  1,  1,  1, -1,  1,
+       -1,  1, -1, -1, -1,  1,  1,  1,  1,  1, -1, -1, -1, -1,  1, -1,  1,
+       -1,  1,  1,  1, -1,  1, -1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=2, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:13:14 [INFO] Packet to demod: [ 1.+0.j  1.+0.j -1.+0.j ...  1.-0.j  1.-0.j  1.-0.j]
+2025-08-26 16:13:14 [INFO] Processing 3048 samples
+2025-08-26 16:13:14 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:13:14 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:13:14 [INFO] simulated packet metadata: SimulatedPacket(tag_id=1, goldcode=array([ 1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1, -1, -1,  1, -1, -1,
+       -1,  1, -1, -1,  1, -1,  1,  1,  1, -1, -1, -1,  1,  1, -1, -1,  1,
+        1,  1, -1,  1,  1,  1,  1,  1,  1, -1, -1, -1,  1,  1, -1,  1,  1,
+        1, -1,  1, -1, -1,  1, -1,  1,  1,  1, -1, -1, -1,  1, -1, -1, -1,
+        1,  1, -1,  1,  1,  1,  1, -1, -1,  1,  1,  1,  1, -1, -1,  1,  1,
+       -1, -1, -1,  1, -1, -1, -1,  1,  1,  1, -1, -1,  1,  1,  1, -1,  1,
+       -1,  1, -1, -1, -1,  1,  1,  1,  1,  1, -1, -1, -1, -1,  1, -1,  1,
+       -1,  1,  1,  1, -1,  1, -1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=2, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:13:14 [INFO] Packet to demod: [ 1.+0.j  1.+0.j -1.+0.j ...  1.-0.j  1.-0.j  1.-0.j]
+2025-08-26 16:13:14 [INFO] Processing 3048 samples
+2025-08-26 16:13:14 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:13:14 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:13:14 [INFO] simulated packet metadata: SimulatedPacket(tag_id=1, goldcode=array([ 1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1, -1, -1,  1, -1, -1,
+       -1,  1, -1, -1,  1, -1,  1,  1,  1, -1, -1, -1,  1,  1, -1, -1,  1,
+        1,  1, -1,  1,  1,  1,  1,  1,  1, -1, -1, -1,  1,  1, -1,  1,  1,
+        1, -1,  1, -1, -1,  1, -1,  1,  1,  1, -1, -1, -1,  1, -1, -1, -1,
+        1,  1, -1,  1,  1,  1,  1, -1, -1,  1,  1,  1,  1, -1, -1,  1,  1,
+       -1, -1, -1,  1, -1, -1, -1,  1,  1,  1, -1, -1,  1,  1,  1, -1,  1,
+       -1,  1, -1, -1, -1,  1,  1,  1,  1,  1, -1, -1, -1, -1,  1, -1,  1,
+       -1,  1,  1,  1, -1,  1, -1, -1]), preamble_bits=[1, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=2, all_bits=[1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:13:14 [INFO] Packet to demod: [ 1.+0.j  1.+0.j -1.+0.j ...  1.-0.j  1.-0.j  1.-0.j]
+2025-08-26 16:13:14 [INFO] Processing 3048 samples
+2025-08-26 16:13:24 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:13:24 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:13:24 [INFO] simulated packet metadata: SimulatedPacket(tag_id=1, goldcode=array([ 1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1, -1, -1,  1, -1, -1,
+       -1,  1, -1, -1,  1, -1,  1,  1,  1, -1, -1, -1,  1,  1, -1, -1,  1,
+        1,  1, -1,  1,  1,  1,  1,  1,  1, -1, -1, -1,  1,  1, -1,  1,  1,
+        1, -1,  1, -1, -1,  1, -1,  1,  1,  1, -1, -1, -1,  1, -1, -1, -1,
+        1,  1, -1,  1,  1,  1,  1, -1, -1,  1,  1,  1,  1, -1, -1,  1,  1,
+       -1, -1, -1,  1, -1, -1, -1,  1,  1,  1, -1, -1,  1,  1,  1, -1,  1,
+       -1,  1, -1, -1, -1,  1,  1,  1,  1,  1, -1, -1, -1, -1,  1, -1,  1,
+       -1,  1,  1,  1, -1,  1, -1, -1]), preamble_bits=[0, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=2, all_bits=[0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:13:24 [INFO] Packet to demod: [-1.+0.j -1.+0.j  1.-0.j ...  1.-0.j  1.-0.j  1.-0.j]
+2025-08-26 16:13:24 [INFO] Processing 3048 samples
+2025-08-26 16:13:24 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:13:24 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:13:24 [INFO] simulated packet metadata: SimulatedPacket(tag_id=1, goldcode=array([ 1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1, -1, -1,  1, -1, -1,
+       -1,  1, -1, -1,  1, -1,  1,  1,  1, -1, -1, -1,  1,  1, -1, -1,  1,
+        1,  1, -1,  1,  1,  1,  1,  1,  1, -1, -1, -1,  1,  1, -1,  1,  1,
+        1, -1,  1, -1, -1,  1, -1,  1,  1,  1, -1, -1, -1,  1, -1, -1, -1,
+        1,  1, -1,  1,  1,  1,  1, -1, -1,  1,  1,  1,  1, -1, -1,  1,  1,
+       -1, -1, -1,  1, -1, -1, -1,  1,  1,  1, -1, -1,  1,  1,  1, -1,  1,
+       -1,  1, -1, -1, -1,  1,  1,  1,  1,  1, -1, -1, -1, -1,  1, -1,  1,
+       -1,  1,  1,  1, -1,  1, -1, -1]), preamble_bits=[0, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=2, all_bits=[0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:13:24 [INFO] Packet to demod: [-1.+0.j -1.+0.j  1.-0.j ...  1.-0.j  1.-0.j  1.-0.j]
+2025-08-26 16:13:24 [INFO] Processing 3048 samples
+2025-08-26 16:13:24 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:13:24 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:13:24 [INFO] simulated packet metadata: SimulatedPacket(tag_id=1, goldcode=array([ 1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1, -1, -1,  1, -1, -1,
+       -1,  1, -1, -1,  1, -1,  1,  1,  1, -1, -1, -1,  1,  1, -1, -1,  1,
+        1,  1, -1,  1,  1,  1,  1,  1,  1, -1, -1, -1,  1,  1, -1,  1,  1,
+        1, -1,  1, -1, -1,  1, -1,  1,  1,  1, -1, -1, -1,  1, -1, -1, -1,
+        1,  1, -1,  1,  1,  1,  1, -1, -1,  1,  1,  1,  1, -1, -1,  1,  1,
+       -1, -1, -1,  1, -1, -1, -1,  1,  1,  1, -1, -1,  1,  1,  1, -1,  1,
+       -1,  1, -1, -1, -1,  1,  1,  1,  1,  1, -1, -1, -1, -1,  1, -1,  1,
+       -1,  1,  1,  1, -1,  1, -1, -1]), preamble_bits=[0, 1, 1, 1], sync_bits=[1, 0, 1, 0], payload_bits=[0, 0, 0, 0], sps=2, all_bits=[0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:13:24 [INFO] Packet to demod: [-1.+0.j -1.+0.j  1.-0.j ...  1.-0.j  1.-0.j  1.-0.j]
+2025-08-26 16:13:24 [INFO] Processing 3048 samples
+2025-08-26 16:20:53 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:20:53 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:21:03 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:21:03 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:22:41 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:22:41 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:22:51 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:22:51 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:23:10 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:23:10 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:23:16 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:23:16 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:25:55 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:25:55 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:26:02 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:26:02 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:26:25 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:26:25 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:26:40 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:26:40 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:27:25 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:27:25 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:27:25 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, preamble_bits=array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]), sync_bits=array([0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0]), payload_bits=array([0, 0, 0, 0]), sps=10, all_bits=array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0,
+       0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]), goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:27:25 [INFO] Packet to demod: [-1.+0.j -1.+0.j -1.+0.j ...  1.-0.j  1.-0.j  1.-0.j]
+2025-08-26 16:27:25 [INFO] Processing 45720 samples
+2025-08-26 16:30:04 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:30:04 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:30:04 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, preamble_bits=array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]), sync_bits=array([0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0]), payload_bits=array([0, 0, 0, 0]), sps=10, all_bits=array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0,
+       0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]), goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:30:04 [INFO] Packet to demod: [-1.+0.j -1.+0.j -1.+0.j ...  1.-0.j  1.-0.j  1.-0.j]
+2025-08-26 16:30:04 [INFO] Processing 45720 samples
+2025-08-26 16:30:45 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:30:45 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:30:45 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, preamble_bits=array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]), sync_bits=array([0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0]), payload_bits=array([0, 0, 0, 0]), sps=10, all_bits=array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0,
+       0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]), goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:30:45 [INFO] Packet to demod: [-1.+0.j -1.+0.j -1.+0.j ...  1.-0.j  1.-0.j  1.-0.j]
+2025-08-26 16:30:45 [INFO] Processing 45720 samples from tag 0
+2025-08-26 16:36:40 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:36:40 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:36:40 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, preamble_bits=array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]), sync_bits=array([0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0]), payload_bits=array([0, 0, 0, 0]), sps=10, all_bits=array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0,
+       0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]), goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:36:40 [INFO] Packet to demod: [-1.+0.j -1.+0.j -1.+0.j ...  1.-0.j  1.-0.j  1.-0.j]
+2025-08-26 16:42:19 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:42:19 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:42:19 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, preamble_bits=array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]), sync_bits=array([0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0]), payload_bits=array([0, 0, 0, 0]), sps=10, all_bits=array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0,
+       0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]), goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:42:19 [INFO] Packet to demod: [-1.+0.j -1.+0.j -1.+0.j ...  1.-0.j  1.-0.j  1.-0.j]
+2025-08-26 16:42:27 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:42:27 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:42:27 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, preamble_bits=array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]), sync_bits=array([0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0]), payload_bits=array([0, 0, 0, 0]), sps=10, all_bits=array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0,
+       0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]), goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:42:27 [INFO] Packet to demod: [-1.+0.j -1.+0.j -1.+0.j ...  1.-0.j  1.-0.j  1.-0.j]
+2025-08-26 16:42:27 [INFO] Processing 45720 samples from tag 0
+2025-08-26 16:42:27 [INFO] Output bits: 
+2025-08-26 16:42:27 [INFO] BER: 
+2025-08-26 16:49:25 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:49:25 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:49:25 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, preamble_bits=array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]), sync_bits=array([0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0]), payload_bits=array([0, 0, 0, 0]), sps=10, all_bits=array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0,
+       0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]), goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:49:25 [INFO] Packet to demod: [-1.+0.j -1.+0.j -1.+0.j ...  1.-0.j  1.-0.j  1.-0.j]
+2025-08-26 16:49:25 [INFO] Processing 45720 samples from tag 0
+2025-08-26 16:49:25 [INFO] Output bits: 
+2025-08-26 16:49:25 [INFO] BER: 
+2025-08-26 16:49:37 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:49:37 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:49:37 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, preamble_bits=array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]), sync_bits=array([0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0]), payload_bits=array([0, 0, 0, 0]), sps=10, all_bits=array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0,
+       0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]), goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:49:37 [INFO] Packet to demod: [-1.+0.j -1.+0.j -1.+0.j ...  1.-0.j  1.-0.j  1.-0.j]
+2025-08-26 16:49:37 [INFO] Processing 45720 samples from tag 0
+2025-08-26 16:50:34 [INFO] Output bits: 
+2025-08-26 16:50:34 [INFO] BER: 
+2025-08-26 16:52:11 [DEBUG] **** New run with CLI arguments: Namespace(source='sim', file=None, verbose=3, n_tags=2)
+2025-08-26 16:52:11 [DEBUG] Generating simulated samples for 2 tags
+2025-08-26 16:52:11 [INFO] simulated packet metadata: SimulatedPacket(tag_id=0, preamble_bits=array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]), sync_bits=array([0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0]), payload_bits=array([0, 0, 0, 0]), sps=10, all_bits=array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0,
+       0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]), goldcode=array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1,
+        1,  1, -1, -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,
+       -1, -1, -1, -1,  1,  1, -1, -1,  1, -1,  1,  1, -1, -1,  1, -1, -1,
+        1, -1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,
+        1,  1,  1,  1, -1, -1, -1,  1, -1,  1, -1,  1,  1,  1,  1, -1,  1,
+        1,  1,  1,  1,  1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+       -1,  1, -1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1,  1,
+        1, -1, -1,  1, -1,  1,  1, -1]), samples=None, snr_db=15.0, frequency_offset_hz=500.0, time_delay_sec=0.002)
+2025-08-26 16:52:11 [INFO] Packet to demod: [-1.+0.j -1.+0.j -1.+0.j ...  1.-0.j  1.-0.j  1.-0.j]
+2025-08-26 16:52:11 [INFO] Processing 45720 samples from tag 0
+2025-08-26 16:52:11 [INFO] Output bits: 
+2025-08-26 16:52:11 [INFO] BER: 
