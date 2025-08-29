@@ -7,7 +7,6 @@ import demod
 import IoTBSConst
 import matplotlib.pyplot as plt
 import numpy as np
-import sim_cdma
 
 np.set_printoptions(linewidth=120, threshold=np.inf)
 
@@ -93,7 +92,7 @@ def get_simulated_samples(n_tags: int, radio_params: IoTBSConst.RadioSettings, s
      
     sim_packet = all_pp.combined_samples()
     
-    logger.info("done combining packet")
+    # logger.info("done combining packet")
     
     return sim_packet, all_pp
 
