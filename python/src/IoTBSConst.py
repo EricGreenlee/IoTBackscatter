@@ -12,10 +12,12 @@ class Packet:
     preamble_bits: np.ndarray           # preamble
     sync_bits: np.ndarray               # sync sequence
     payload_bits: np.ndarray           # payload
+    pad_bits: np.ndarray                #bits at the end to pad out
     sps: int            # samples per chip/bit
 
     # computed fields
-    all_bits: List[int] = field(init=False)   # concatenated bits
+    actual_bits: np.ndarray = field(init=False)
+    all_bits: np.ndarray = field(init=False)   # concatenated bits
     goldcode: List[int] = field(init=False)     
     
     samples: Optional[List[float]] = field(default=None)  # computed later
@@ -23,7 +25,8 @@ class Packet:
     def __post_init__(self):
         # Concatenate preamble, sync, and payload
         self.goldcode = GCs[self.tag_id]
-        self.all_bits = np.concatenate([self.preamble_bits, self.sync_bits, self.payload_bits])
+        self.actual_bits = np.concatenate([self.preamble_bits, self.sync_bits, self.payload_bits])
+        self.all_bits = np.concatenate([self.actual_bits, self.pad_bits])
         
     def gen_ideal_samples(self):
         self.samples = np.zeros(self.sps*len(self.goldcode)*len(self.all_bits)).astype(np.complex64)
@@ -65,9 +68,15 @@ GCs = np.array([
 [1, -1, 1, -1, -1, -1, -1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, 1, -1, 1, 1, -1, 1, -1, -1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, 1, 1, -1, -1, -1, -1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, -1, 1, 1, -1, 1, -1, 1, 1, -1, 1, 1, -1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, -1, -1],
 ])
 
+# GCs = np.array([
+#    [-1, -1, 1, -1] 
+    
+# ])
+
 gc_len = len(GCs[0])
 num_gcs = len(GCs)
 
 #Preamble and sync words
-preamble = np.array([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1])
+preamble = np.array([1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0])
 sync_seq = np.array([0,1,0,1,1,0,0,1,1,1,1,1,0,0,0,0])
+bitsPerPacket = 8

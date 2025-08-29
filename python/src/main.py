@@ -8,6 +8,8 @@ import IoTBSConst
 import numpy as np
 import sim_cdma
 
+np.set_printoptions(linewidth=120, threshold=np.inf)
+
 # ----------------------------
 # Global logger
 # ----------------------------
@@ -51,13 +53,20 @@ def configure_logging(verbosity_level: int):
 def get_simulated_samples(n_tags: int):
     logger.debug("Generating simulated samples for %s tags", n_tags)
 
+
     # Non-ideal simulated packet
+    
     sp = IoTBSConst.SimulatedPacket(
         tag_id = 0,
-        preamble_bits = IoTBSConst.preamble,
-        sync_bits = IoTBSConst.sync_seq,
-        payload_bits=np.array([0, 0, 0, 0]),
-        sps=10,
+        # preamble_bits = IoTBSConst.preamble,
+        preamble_bits = np.array([1, 1, 1, 1, 1, 0, 1, 0]),
+        # sync_bits = IoTBSConst.sync_seq,
+        sync_bits = [],
+        # n_payload_bits = 100,
+        # payload_bits=np.array([1, 0, 1, 0, 1, 0, 0, 1]),
+        payload_bits=np.random.randint(0,2,IoTBSConst.bitsPerPacket),
+        pad_bits=np.zeros(10),
+        sps=2,
         snr_db=15.0,
         frequency_offset_hz=500.0,
         time_delay_sec=0.002

@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from IoTBSConst import gc_len
 from main import logger
 from scipy import signal
 
@@ -24,6 +25,7 @@ def plot_time_psd_scat(samples, samp_rate, title):
     plt.title(title+' constellation')
     plt.grid('on')
     plt.axis('equal')
+    
 def lpf(samples, data_rate, samp_rate):
 
     #filter
@@ -37,45 +39,198 @@ def lpf(samples, data_rate, samp_rate):
 def agc(samples,out_amplitude):
     
     mag = np.sum(np.abs(samples)**2)/len(samples)
-    
     gain = out_amplitude/np.sqrt(mag)
+    samples_out = samples*gain
     
-    samples = samples*gain
+    return(samples_out) 
+
+def mm_time_recovery(samples, samps_per_symbol):
     
-    # mag_out = np.sum(np.abs(samples)**2)/len(samples)
-    # print("original mag: ", mag)
-    # print("gain: ",gain)
-    # print("mag_out: ",mag_out)
+    samples_interpolated = signal.resample_poly(samples, 16, 1)
+    mu = 0 # initial estimate of phase of sample
+    out = np.zeros(len(samples) + 10, dtype=np.complex64)
+    out_rail = np.zeros(len(samples) + 10, dtype=np.complex64) # stores values, each iteration we need the previous 2 values plus current value
+    i_in = 0 # input samples index
+    i_out = 2 # output index (let first two outputs be 0)
+    while i_out < len(samples) and i_in+16 < len(samples):
+        # out[i_out] = samples[i_in] # grab what we think is the "best" sample
+        out[i_out] = samples_interpolated[i_in*16 + int(mu*16)]
+        out_rail[i_out] = int(np.real(out[i_out]) > 0) + 1j*int(np.imag(out[i_out]) > 0)
+        x = (out_rail[i_out] - out_rail[i_out-2]) * np.conj(out[i_out-1])
+        y = (out[i_out] - out[i_out-2]) * np.conj(out_rail[i_out-1])
+        mm_val = np.real(y - x)
+        mu += samps_per_symbol + 0.3*mm_val
+        i_in += int(np.floor(mu)) # round down to nearest int since we are using it as an index
+        mu = mu - np.floor(mu) # remove the integer part of mu
+        i_out += 1 # increment output index
+    out = out[2:i_out] # remove the first two, and anything after i_out (that was never filled out)
     
-    return(samples) 
+    return(out)
+
+def course_f_correct(samples, samp_rate):
+    samples_sqr = samples**2
+    psd_sq = np.fft.fftshift(np.abs(np.fft.fft(samples_sqr)))
+    f = np.linspace(-samp_rate/2.0, samp_rate/2.0, len(psd_sq))
+    max_freq = f[np.argmax(psd_sq)]
+    Ts = 1/samp_rate # calc sample period
+    # t = np.arange(0, Ts*len(samples), Ts) # create time vector
+    t = np.linspace(0,(len(samples)-1)/samp_rate, len(samples))
+    samples = samples * np.exp(-1j*2*np.pi*max_freq*t/2.0)
+    
+    logger.debug("coarse freq offset: %s", max_freq)
+    
+    return(samples)
+
+def costas_loop(samples, samp_rate):
+    
+    N = len(samples)
+    phase = 0
+    freq = 0
+    # These next two params is what to adjust, to make the feedback loop faster or slower (which impacts stability)
+    alpha = 0.132
+    beta = 0.00932
+    out = np.zeros(N, dtype=np.complex64)
+    freq_log = []
+    for i in range(N):
+        out[i] = samples[i] * np.exp(-1j*phase) # adjust the input sample by the inverse of the estimated phase offset
+        error = np.real(out[i]) * np.imag(out[i]) # This is the error formula for 2nd order Costas Loop (e.g. for BPSK)
+
+        # Advance the loop (recalc phase and freq offset)
+        freq += (beta * error)
+        freq_log.append(freq * samp_rate / (2*np.pi)) # convert from angular velocity to Hz for logging
+        phase += freq + (alpha * error)
+
+        # Optional: Adjust phase so its always between 0 and 2pi, recall that phase wraps around every 2pi
+        while phase >= 2*np.pi:
+            phase -= 2*np.pi
+        while phase < 0:
+            phase += 2*np.pi
+    
+    # plt.figure()
+    # plt.plot(freq_log)
+    # plt.title("Frequency offset from costas loop")
+    # plt.grid("on")
+            
+    return(out)
+
+def demod_bpsk(samples):
+            
+    nbits = len(samples)
+    bits = np.zeros(nbits)
+    for i in range(nbits):
+        bits[i] = int(np.real(samples[i]) > 0)
+        
+    return(bits.astype(int))   
+
+def sync_word_sync(bits_in, s_word, nbits_out, samps_per_bit):
+        
+    long_sync_word = np.repeat(s_word,samps_per_bit)
+    sync_word_corr = np.correlate(bits_in, long_sync_word, mode='valid')
+    
+    plt.figure()
+    plt.plot(sync_word_corr)
+    
+    offset = int(np.argmax(np.abs(sync_word_corr))) #the filter introduces a 6 bit delay
+    logger.info("offset: %s", offset)
+    logger.info("value of correlation at offset: %s", sync_word_corr[offset])
+    sign = np.sign(sync_word_corr[offset])
+    bits_out = bits_in[offset+len(s_word):]
+
+    bits_out = (sign*bits_out[:nbits_out]+1)/2
+
+    return(bits_out, sync_word_corr[offset])
 
 def demodulate_packet(input_samples, tag_params, radio_params):
     logger.info("Processing %s samples from tag %s", len(input_samples), tag_params.tag_id) 
     plot_time_psd_scat(input_samples, radio_params.samplerate_hz, "Raw Received Samples")
     
+    proc_samples = input_samples
+    
     #low pass filter
-    proc_samples = lpf(input_samples, 25e3, radio_params.samplerate_hz)
+    proc_samples = lpf(proc_samples, 25e3/2, radio_params.samplerate_hz)
     plot_time_psd_scat(proc_samples, radio_params.samplerate_hz, "Filtered Samples")
     
     #agc
     proc_samples = agc(proc_samples, 1/np.sqrt(2))
     plot_time_psd_scat(proc_samples, radio_params.samplerate_hz, "Filtered & AGCed Samples")
 
+    #correlation to find if signal is present and, if so, what the offset freq is
     
+
     #despread
+    bits_to_calc = len(tag_params.all_bits)
+    logger.info("Expected number of bits: %s", bits_to_calc)
+    samps_per_bit = tag_params.sps*len(tag_params.goldcode)
+    despread_samples_repeat = np.zeros(samps_per_bit*bits_to_calc).astype(np.complex64)
     
+    for bit in range(bits_to_calc):
+        despread_samples_repeat[bit*samps_per_bit:(bit+1)*samps_per_bit] = proc_samples[bit*samps_per_bit:(bit+1)*samps_per_bit]*np.repeat(tag_params.goldcode.astype(np.complex64),tag_params.sps)
+
+    plot_time_psd_scat(despread_samples_repeat, radio_params.samplerate_hz, "Despread Samples w/ Repeat")
+    
+    despread_samples_interp = np.zeros(samps_per_bit*bits_to_calc).astype(np.complex64)
+    
+    for bit in range(bits_to_calc):
+        despread_samples_interp[bit*samps_per_bit:(bit+1)*samps_per_bit] = proc_samples[bit*samps_per_bit:(bit+1)*samps_per_bit]*signal.resample_poly(tag_params.goldcode.astype(np.complex64),tag_params.sps,1)
+
+    plot_time_psd_scat(despread_samples_interp, radio_params.samplerate_hz, "Despread Samples w/ Interp")
+
+
     #mm time recovery
+    proc_samples = mm_time_recovery(despread_samples_repeat, tag_params.sps)
     
     #coarse f correct
+    proc_samples = course_f_correct(proc_samples, radio_params.samplerate_hz)
+    plt.figure()
+    plt.plot(proc_samples)
+    plt.title("After course f correct")
+    plt.grid("on")
     
     #costas loop
+    proc_samples = costas_loop(proc_samples, radio_params.samplerate_hz)
+    plt.figure()
+    plt.plot(proc_samples)
+    plt.title("After Costas Loop")
+    plt.grid("on")
     
     #bpsk demod
+    rx_bits_raw = demod_bpsk(proc_samples)
+    # logger.info("Raw received bits: %s",rx_bits_raw.tolist())
+    plt.figure()
+    plt.plot(rx_bits_raw)
+    plt.title("rx_bits_raw")
+    plt.grid("on")
     
-    #average over cdma symbol
+    logger.info("rx_bits_raw: %s", rx_bits_raw)
     
-    logger.info("Output bits: ")
+    #average over cdma symbol - create array filled with NaNs
+    nbits_data = len(tag_params.actual_bits)
+    proc_bits = np.full(nbits_data, np.nan)
     
-    logger.info("BER: ")
+    # Bit decision logic: majority voting over gc_len chunks 
+    for i in range(nbits_data):
+        start_idx = i * gc_len
+        end_idx = (i + 1) * gc_len-1
+        if end_idx <= len(rx_bits_raw):
+            chunk = rx_bits_raw[start_idx:end_idx]
+            # Count 1s and 0s in the chunk
+            ones_count = np.sum(chunk)
+            zeros_count = len(chunk) - ones_count
+            # Decide based on majority
+            proc_bits[i] = 1 if ones_count > zeros_count else 0
+            
+    # logger.info("proc_bits:%s",proc_bits)
+    
+    # rx_bits_payload, sync_word_corr = sync_word_sync(rx_bits_raw*2-1, tag_params.sync_bits*2-1, len(tag_params.payload_bits), samps_per_bit)
+    
+    logger.info("Processed bits: %s",proc_bits)
+    logger.info("Transmitted actual bits: %s", tag_params.actual_bits)
+    # logger.info("Sync word correlation: %s", sync_word_corr)
+    
+    num_bits = len(tag_params.actual_bits)
+    num_errors = sum(abs(proc_bits-tag_params.actual_bits))
+    BER = num_errors/num_bits
+    
+    logger.info("BER: %s", BER)
     
     plt.show()
