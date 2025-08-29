@@ -51,33 +51,37 @@ def configure_logging(verbosity_level: int):
 # Sample functions (stubs)
 # ----------------------------
 def get_simulated_samples(n_tags: int):
-    logger.debug("Generating simulated samples for %s tags", n_tags)
+    logger.info("Generating simulated samples for %s tags", n_tags)
 
+    # Hold all simulated packet parameters
+    all_pp = IoTBSConst.TagParams()
 
-    # Non-ideal simulated packet
+    for tag in range(n_tags):
+        spp = IoTBSConst.SimulatedPacketParams(
+            tag_id = tag,
+            preamble_bits = IoTBSConst.preamble,
+            # preamble_bits = np.array([1, 1, 1, 1, 1, 0, 1, 0]),
+            # sync_bits = IoTBSConst.sync_seq,
+            sync_bits = [],
+            # n_payload_bits = 100,
+            # payload_bits=np.array([1, 0, 1, 0, 1, 0, 0, 1]),
+            payload_bits=np.random.randint(0,2,IoTBSConst.bitsPerPacket),
+            pad_bits=np.zeros(10),
+            sps=2,
+            snr_db=15.0,
+            frequency_offset_hz=500.0,
+            time_delay_sec=0.002
+        )
+        spp.gen_ideal_samples()
+        
+        all_pp.add_tag(spp)
     
-    sp = IoTBSConst.SimulatedPacket(
-        tag_id = 0,
-        # preamble_bits = IoTBSConst.preamble,
-        preamble_bits = np.array([1, 1, 1, 1, 1, 0, 1, 0]),
-        # sync_bits = IoTBSConst.sync_seq,
-        sync_bits = [],
-        # n_payload_bits = 100,
-        # payload_bits=np.array([1, 0, 1, 0, 1, 0, 0, 1]),
-        payload_bits=np.random.randint(0,2,IoTBSConst.bitsPerPacket),
-        pad_bits=np.zeros(10),
-        sps=2,
-        snr_db=15.0,
-        frequency_offset_hz=500.0,
-        time_delay_sec=0.002
-    )
     # print(sp.summary())
-    logger.info("simulated packet metadata: %s", sp)
+    logger.info("simulated packet metadata: %s", all_pp.summary())
      
-    sp.gen_ideal_samples()
-    sim_packet = sp.samples
+    sim_packet = all_pp.combined_samples()
     
-    return sim_packet, sp
+    return sim_packet, all_pp
 
 def get_file_samples(path):
     logger.info(f"Reading samples from file: {path}")

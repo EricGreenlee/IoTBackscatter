@@ -2,12 +2,13 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 import numpy as np
+from main import logger
 
 # from main import logger
 
 # Ideal packet
 @dataclass
-class Packet:
+class PacketParams:
     tag_id: int         
     preamble_bits: np.ndarray           # preamble
     sync_bits: np.ndarray               # sync sequence
@@ -36,7 +37,7 @@ class Packet:
 
 # Non-Ideal Simulated Packet
 @dataclass
-class SimulatedPacket(Packet):
+class SimulatedPacketParams(PacketParams):
     snr_db: float = 30.0          # Signal-to-noise ratio in dB
     frequency_offset_hz: float = 0.0  # Frequency offset in Hz
     time_delay_sec: float = 0.0       # Time delay in seconds
@@ -48,7 +49,37 @@ class SimulatedPacket(Packet):
                 f"SNR={self.snr_db} dB, freq_offset={self.frequency_offset_hz} Hz, "
                 f"time_delay={self.time_delay_sec}s")
 
-#
+@dataclass
+class TagParams:
+    tagParams: List[SimulatedPacketParams] = field(default_factory=list)
+    ntags: int = field(default=0)
+    
+    def add_tag(self, tag: SimulatedPacketParams):
+        """Add a tag and increment the count"""
+        self.tagParams.append(tag)
+        self.ntags += 1
+    
+    def get_tag(self, index: int) -> SimulatedPacketParams:
+        """Get tag by index"""
+        if 0 <= index < len(self.tagParams):
+            return self.tagParams[index]
+        raise IndexError(f"Tag index {index} out of range")
+
+    def summary(self):
+        sum_str = ""
+        for tag in range(self.ntags):
+            cur_tag = self.tagParams[tag]
+            sum_str = sum_str + f"\nid = {cur_tag.tag_id}\tbits={cur_tag.actual_bits}"
+        
+        return sum_str
+    
+    def combined_samples(self):
+        comb_samples = np.zeros(len(self.tagParams[0].samples))
+        for tag in range(self.ntags):
+            comb_samples = comb_samples + self.tagParams[tag].samples
+        
+        return comb_samples
+    
 @dataclass
 class RadioSettings:
     samplerate_hz: int
