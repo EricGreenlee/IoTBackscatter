@@ -2,9 +2,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 import numpy as np
-from main import logger
 
-# from main import logger
 
 # Ideal packet
 @dataclass
@@ -15,7 +13,9 @@ class PacketParams:
     payload_bits: np.ndarray           # payload
     pad_bits: np.ndarray                #bits at the end to pad out
     sps: int            # samples per chip/bit
-
+    samplerate_hz: int
+    total_duration_sec: float 
+    
     # computed fields
     actual_bits: np.ndarray = field(init=False)
     all_bits: np.ndarray = field(init=False)   # concatenated bits
@@ -30,7 +30,8 @@ class PacketParams:
         self.all_bits = np.concatenate([self.actual_bits, self.pad_bits])
         
     def gen_ideal_samples(self):
-        self.samples = np.zeros(self.sps*len(self.goldcode)*len(self.all_bits)).astype(np.complex64)
+        # self.samples = np.zeros(self.sps*len(self.goldcode)*len(self.all_bits)).astype(np.complex64)
+        self.samples = np.zeros(int(self.total_duration_sec*self.samplerate_hz)).astype(np.complex64)
         for i, bit in enumerate(self.all_bits):
             self.samples[i*self.sps*len(self.goldcode):(i+1)*self.sps*len(self.goldcode)] = np.repeat(self.goldcode.astype(np.complex64)*(bit*2-1),self.sps)
 
@@ -41,6 +42,26 @@ class SimulatedPacketParams(PacketParams):
     snr_db: float = 30.0          # Signal-to-noise ratio in dB
     frequency_offset_hz: float = 0.0  # Frequency offset in Hz
     time_delay_sec: float = 0.0       # Time delay in seconds
+    oneway_tag2modem_dist_m: float = 0
+
+    def gen_nonideal_samples(self):
+        self.gen_ideal_samples()
+        
+        #attenuate signal
+        
+        #random time delay by full samples
+        samps_2_shift = int(self.time_delay_sec*self.samplerate_hz)
+        # print(f"roll by {samps_2_shift} samples")
+        self.samples = np.roll(self.samples,samps_2_shift)
+        
+        #time/phase delay by partial samples
+        
+        #frequency drift
+        
+        #add background noise
+        noise_pwr_raw = 10**(-self.snr_db/10)
+        self.samples = self.samples + np.random.normal(0,noise_pwr_raw, self.samples.shape)+1j*np.random.normal(0,noise_pwr_raw, self.samples.shape)
+        
 
     def summary(self):
         return (f"SimPacket: bits={self.all_bits},\n "
@@ -70,6 +91,14 @@ class TagParams:
         for tag in range(self.ntags):
             cur_tag = self.tagParams[tag]
             sum_str = sum_str + f"\nid = {cur_tag.tag_id}\tbits={cur_tag.actual_bits}"
+        
+        return sum_str
+    
+    def summary_nonideal(self):
+        sum_str = ""
+        for tag in range(self.ntags):
+            cur_tag = self.tagParams[tag]
+            sum_str = sum_str + f"\nid = {cur_tag.tag_id}\ttime_delay_sec={cur_tag.time_delay_sec}"
         
         return sum_str
     
@@ -110,4 +139,4 @@ num_gcs = len(GCs)
 #Preamble and sync words
 preamble = np.array([1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0])
 sync_seq = np.array([0,1,0,1,1,0,0,1,1,1,1,1,0,0,0,0])
-bitsPerPacket = 100
+bitsPerPacket = 16
