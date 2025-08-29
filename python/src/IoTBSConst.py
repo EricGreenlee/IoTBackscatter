@@ -110,4 +110,4 @@ num_gcs = len(GCs)
 #Preamble and sync words
 preamble = np.array([1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0])
 sync_seq = np.array([0,1,0,1,1,0,0,1,1,1,1,1,0,0,0,0])
-bitsPerPacket = 8
+bitsPerPacket = 100

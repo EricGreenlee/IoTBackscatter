@@ -161,7 +161,7 @@ def demodulate_packet(input_samples, tag_params, radio_params):
 
         #despread
         bits_to_calc = len(itagParams.all_bits)
-        logger.info("Expected number of bits: %s", bits_to_calc)
+        logger.debug("Expected number of bits: %s", bits_to_calc)
         samps_per_bit = itagParams.sps*len(itagParams.goldcode)
         despread_samples_repeat = np.zeros(samps_per_bit*bits_to_calc).astype(np.complex64)
         
@@ -225,14 +225,24 @@ def demodulate_packet(input_samples, tag_params, radio_params):
         
         # rx_bits_payload, sync_word_corr = sync_word_sync(rx_bits_raw*2-1, tag_params.sync_bits*2-1, len(tag_params.payload_bits), samps_per_bit)
         
-        logger.info("Processed bits: %s",proc_bits)
-        logger.info("Transmitted actual bits: %s", itagParams.actual_bits)
+        logger.debug("Processed bits: %s",proc_bits) 
+        logger.debug("Transmitted actual bits: %s", itagParams.actual_bits)
         # logger.info("Sync word correlation: %s", sync_word_corr)
         
         num_bits = len(itagParams.actual_bits)
         num_errors = sum(abs(proc_bits-itagParams.actual_bits))
         BER = num_errors/num_bits
         
-        logger.info("BER (tag%s): %s", itag,BER)
+        logger.debug("BER (tag%s): %s", itag, BER)
+        
+        # Store results for this tag
+        if itag == 0:
+            results = {}
+        results[itag] = {
+            'num_errors': num_errors,
+            'num_bits': num_bits,
+            'ber': BER
+        }
     
     plt.show()
+    return results
