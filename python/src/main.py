@@ -71,10 +71,10 @@ def get_simulated_samples(n_tags: int, radio_params: IoTBSConst.RadioSettings, s
             payload_bits=np.random.randint(0,2,IoTBSConst.bitsPerPacket),
             pad_bits=np.zeros(10),
             sps=10,
-            snr_db=40,#10.0,
-            #tx_pwr_dbm=
-            #noise_pwr_dbm=
-            #oneway_tag2modem_dist_m
+            # snr_db=40,#10.0,
+            tx_pwr_dbm=30.0,
+            noise_pwr_dbm=0.0,
+            oneway_tag2modem_dist_m = 1.0, #1m with 30dB SNR seems to work
             frequency_offset_hz=np.random.uniform(-500,500),
             # time_delay_sec=0.05,
             time_delay_sec=np.random.uniform(0.001,0.25),

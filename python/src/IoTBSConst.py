@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 import numpy as np
+from scipy import signal
 
 
 # Ideal packet
@@ -39,29 +40,63 @@ class PacketParams:
 # Non-Ideal Simulated Packet
 @dataclass
 class SimulatedPacketParams(PacketParams):
-    snr_db: float = 30.0          # Signal-to-noise ratio in dB
+    # snr_db: float = 30.0          # Signal-to-noise ratio in dB
+    tx_pwr_dbm: float = 30.0
+    noise_pwr_dbm: float = 0
     frequency_offset_hz: float = 0.0  # Frequency offset in Hz
     time_delay_sec: float = 0.0       # Time delay in seconds
     oneway_tag2modem_dist_m: float = 0
 
     def gen_nonideal_samples(self):
+        
+        # Generate the ideal samples at the tx power
         self.gen_ideal_samples()
+        amplitude_mw = 10**(self.tx_pwr_dbm/10)
+        self.samples = amplitude_mw * self.samples
         
-        #attenuate signal
+        # Distance-based attenuation (free space path loss)
+        if self.oneway_tag2modem_dist_m > 0:
+            # Free space path loss: PL(dB) = 20*log10(4π*d*f/c)
+            # Assuming 915 MHz carrier frequency and speed of light
+            carrier_freq_hz = 915e6
+            c = 3e8  # speed of light
+            oneway_path_loss_db = 20 * np.log10(4 * np.pi * self.oneway_tag2modem_dist_m * carrier_freq_hz / c)
+            roundtrip_path_loss_db = 2 * oneway_path_loss_db
+            attenuation_linear = 10**(-roundtrip_path_loss_db/20)
+            self.samples = self.samples * attenuation_linear
         
-        #random time delay by full samples
-        samps_2_shift = int(self.time_delay_sec*self.samplerate_hz)
-        # print(f"roll by {samps_2_shift} samples")
-        self.samples = np.roll(self.samples,samps_2_shift)
+        # Time delay - integer and fractional parts
+        total_delay_samples = self.time_delay_sec * self.samplerate_hz
+        integer_delay_samples = int(total_delay_samples)
+        fractional_delay_samples = total_delay_samples - integer_delay_samples
         
-        #time/phase delay by partial samples
+        # Integer delay using np.roll
+        self.samples = np.roll(self.samples, integer_delay_samples)
+        
+        # # Fractional delay using interpolation
+        # if fractional_delay_samples != 0:
+        #     # Create fractional delay filter
+        #     delay_filter_length = 41  # odd number for symmetric filter
+        #     n = np.arange(-delay_filter_length//2, delay_filter_length//2) # ...-3,-2,-1,0,1,2,3...
+        #     h = np.sinc(n - fractional_delay_samples) # calc filter taps
+        #     h *= np.hamming(delay_filter_length) # window the filter to make sure it decays to 0 on both sides
+        #     h /= np.sum(h) # normalize to get unity gain, we don't want to change the amplitude/power
+        #     # out_samples = np.convolve(samples, h) # apply filter
+        #     self.samples = signal.convolve(self.samples, h)
+            
+            # h = np.sinc(np.arange(-delay_filter_length//2, delay_filter_length//2 + 1) - fractional_delay_samples)
+            # h *= np.hamming(delay_filter_length)  # windowing to reduce artifacts
+            # h /= np.sum(h)  # normalize
+            
+            # Apply fractional delay filter
+            # self.samples = signal.convolve(self.samples, h, mode='same')
         
         #frequency drift
         time_sec = np.linspace(0, self.total_duration_sec -1/self.samplerate_hz,int(self.total_duration_sec *self.samplerate_hz))
         self.samples = self.samples*np.exp(1j*2*np.pi*self.frequency_offset_hz*time_sec)
         
         #add background noise
-        noise_pwr_raw = 10**(-self.snr_db/10)
+        noise_pwr_raw = 10**(self.noise_pwr_dbm/10)
         self.samples = self.samples + np.random.normal(0,noise_pwr_raw, self.samples.shape)+1j*np.random.normal(0,noise_pwr_raw, self.samples.shape)
         
 
@@ -69,7 +104,7 @@ class SimulatedPacketParams(PacketParams):
         return (f"SimPacket: bits={self.all_bits},\n "
                 f"Goldcode={self.goldcode},\n"
                 f"samples_per_signal={self.sps}, "
-                f"SNR={self.snr_db} dB, freq_offset={self.frequency_offset_hz} Hz, "
+                # f"SNR={self.snr_db} dB, freq_offset={self.frequency_offset_hz} Hz, "
                 f"time_delay={self.time_delay_sec}s")
 
 @dataclass
@@ -101,7 +136,7 @@ class TagParams:
         for tag in range(self.ntags):
             cur_tag = self.tagParams[tag]
             sum_str = sum_str + f"\nid = {cur_tag.tag_id}\ttime_delay_sec={round(cur_tag.time_delay_sec,2)}"\
-            f"\tfrequency_offset_hz={cur_tag.frequency_offset_hz}\tsnr_db:{cur_tag.snr_db}"
+            f"\tfrequency_offset_hz={cur_tag.frequency_offset_hz}"
         
         return sum_str
     

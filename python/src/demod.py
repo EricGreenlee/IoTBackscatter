@@ -93,7 +93,7 @@ def time_freq_code_search(input_samples, target_gc, input_sps, fs_hz, max_freq_d
 
     logger.info(f"max_corr: {max_corr}")
     logger.info(f"freq index of max correlation: {max_corr_idx[0]}, corresponding freq_adj_hz: {freq_adj_hz}")
-    logger.info(f"time index of max correlation: {max_corr_idx[1]}")
+    # logger.info(f"time index of max correlation: {max_corr_idx[1]}")
     
     output_samples = input_samples * np.exp(-1j*2*np.pi*freq_adj_hz*time_delays_sec)
     correlation = np.correlate(output_samples, target_gc_stretch, mode='valid')
@@ -107,7 +107,7 @@ def time_freq_code_search(input_samples, target_gc, input_sps, fs_hz, max_freq_d
         first_peak_time_sec = first_peak_index/fs_hz
         first_peak_sign = np.sign(np.real(first_peak_value))
       
-        logger.debug("first peak-> sample number: %s, value: %s, time: %s, sign: %s", first_peak_index, first_peak_value, first_peak_time_sec, first_peak_sign)
+        logger.info("first peak-> sample number: %s, value: %s, time: %s, sign: %s", first_peak_index, first_peak_value, first_peak_time_sec, first_peak_sign)
     else:
         logger.warning("No peaks found!")
         first_peak_index = 0
