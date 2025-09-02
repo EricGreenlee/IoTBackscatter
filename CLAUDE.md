@@ -44,9 +44,22 @@ Includes comprehensive logging to both console (configurable verbosity) and `dem
 
 ## Running the Code
 
+### Quick Start - Full Experiment
+Use the automated script to run a complete backscatter experiment:
+```bash
+./scripts/start_modem.sh
+```
+This script opens two terminals:
+- HackRF transmitter: `hackrf_transfer -f 915000000 -x 47 -c 127`
+- Python receiver: `python/src/main.py`
+
+### Individual Components
+
+#### Python Demodulator (`python/src/main.py`)
 The main demodulator accepts three sample sources:
 
 ```bash
+cd python
 # Simulate packets from multiple tags
 python src/main.py --source sim --n_tags 2 -vv
 
@@ -58,6 +71,27 @@ python src/main.py --source sdr
 ```
 
 Verbosity levels: `-v` (WARNING), `-vv` (INFO), `-vvv` (DEBUG)
+
+#### HackRF Transmitter
+Start the HackRF One transmitter for 915 MHz experiments:
+```bash
+hackrf_transfer -f 915000000 -x 47 -c 127
+```
+
+#### Arduino Firmware
+Flash and run the embedded firmware for backscatter tags:
+```bash
+# Navigate to arduino directory and flash firmware
+cd arduino/
+# (Upload via Arduino IDE or command line tools)
+```
+
+#### Meta Design Script
+Run the meta design optimization script:
+```bash
+cd python/
+python meta_design.py
+```
 
 ## Code Style
 
