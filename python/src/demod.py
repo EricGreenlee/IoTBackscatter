@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from IoTBSConst import gc_len
+from IoTBSConst import bitsPerPacket, gc_len, sync_seq
 from main import logger
 from scipy import signal
 
@@ -44,9 +44,12 @@ def agc(samples,out_amplitude):
     
     return(samples_out) 
 
-def time_freq_code_search(input_samples, target_gc, input_sps, fs_hz, enable_plotting=False):#, max_freq_dev_hz, nfreq_pts):
-    # freq_offsets_hz = [-100,-50,0,50,100]
-    freq_offsets_hz = [0]
+def time_freq_code_search(input_samples, target_gc, input_sps, fs_hz, max_freq_dev_hz, nfreq_pts : int, enable_plotting=False):
+    #must get the frequency to within ~150 Hz for the costas loop to be able to correct it
+    
+    freq_offsets_hz = np.linspace(-1*max_freq_dev_hz, max_freq_dev_hz, nfreq_pts)#[-100,-50,0,50,100]
+    logger.debug("Test frequency offsets: %s", freq_offsets_hz)
+    # freq_offsets_hz = [0]
     time_delays_sec = np.linspace(0, (len(input_samples)-1/fs_hz), len(input_samples))
     
     target_gc_stretch = np.repeat(target_gc,input_sps)
@@ -104,12 +107,12 @@ def time_freq_code_search(input_samples, target_gc, input_sps, fs_hz, enable_plo
         first_peak_time_sec = first_peak_index/fs_hz
         first_peak_sign = np.sign(np.real(first_peak_value))
       
-        logger.info("first peak-> sample number: %s, value: %s, time: %s, sign: %s", first_peak_index, first_peak_value, first_peak_time_sec, first_peak_sign)
+        logger.debug("first peak-> sample number: %s, value: %s, time: %s, sign: %s", first_peak_index, first_peak_value, first_peak_time_sec, first_peak_sign)
     else:
         logger.warning("No peaks found!")
         first_peak_index = 0
         first_peak_sign = 1
-    output_samples = np.roll(output_samples, -1*first_peak_index)*first_peak_sign
+    output_samples = np.roll(output_samples, -1*first_peak_index)
     
     return output_samples
     
@@ -137,19 +140,20 @@ def mm_time_recovery(samples, samps_per_symbol):
     
     return(out)
 
-def course_f_correct(samples, samp_rate):
-    samples_sqr = samples**2
-    psd_sq = np.fft.fftshift(np.abs(np.fft.fft(samples_sqr)))
-    f = np.linspace(-samp_rate/2.0, samp_rate/2.0, len(psd_sq))
-    max_freq = f[np.argmax(psd_sq)]
-    Ts = 1/samp_rate # calc sample period
-    # t = np.arange(0, Ts*len(samples), Ts) # create time vector
-    t = np.linspace(0,(len(samples)-1)/samp_rate, len(samples))
-    samples = samples * np.exp(-1j*2*np.pi*max_freq*t/2.0)
+# course frequency correction handled in time_freq_code search
+# def course_f_correct(samples, samp_rate):
+#     samples_sqr = samples**2
+#     psd_sq = np.fft.fftshift(np.abs(np.fft.fft(samples_sqr)))
+#     f = np.linspace(-samp_rate/2.0, samp_rate/2.0, len(psd_sq))
+#     max_freq = f[np.argmax(psd_sq)]
+#     Ts = 1/samp_rate # calc sample period
+#     # t = np.arange(0, Ts*len(samples), Ts) # create time vector
+#     t = np.linspace(0,(len(samples)-1)/samp_rate, len(samples))
+#     samples = samples * np.exp(-1j*2*np.pi*max_freq*t/2.0)
     
-    logger.debug("coarse freq offset: %s", max_freq)
+#     logger.debug("coarse freq offset: %s", max_freq)
     
-    return(samples)
+#     return(samples)
 
 def costas_loop(samples, samp_rate):
     
@@ -192,6 +196,38 @@ def demod_bpsk(samples):
         
     return(bits.astype(int))   
 
+def sync_word_search_correction(in_bits, sync_seq, payload_len):
+    
+    in_bits_bip = in_bits*2-1
+    sync_seq_bip = sync_seq*2-1
+    
+    sync_corr = np.correlate(in_bits_bip, sync_seq_bip, mode='valid')
+    sync_thresh = 0#len(sync_seq)-1
+    peaks, _ = signal.find_peaks(abs(sync_corr), height=sync_thresh)
+    
+    # logger.info(f"peaks: {peaks}")
+    
+    # Get the first peak above threshold
+    if len(peaks) > 0:
+        first_peak_sample_num = peaks[np.argmax(abs(sync_corr[peaks]))]
+        first_peak_value = sync_corr[first_peak_sample_num]
+        first_peak_sign = np.sign(first_peak_value)
+      
+        logger.info("first sync peak-> sample number: %s, value: %s, sign: %s", first_peak_sample_num, first_peak_value, first_peak_sign)
+    else:
+        logger.warning("No peaks found!")
+        first_peak_sample_num = 0
+        first_peak_sign = 1
+        
+    out_all_bits = (in_bits_bip*first_peak_sign+1)/2
+    out_payload_bits = out_all_bits[first_peak_sample_num:first_peak_sample_num+payload_len]
+    
+    # plt.figure()
+    # plt.plot(sync_corr)
+    # plt.show()
+
+    return out_all_bits, out_payload_bits
+
 # def sync_word_sync(bits_in, s_word, nbits_out, samps_per_bit):
         
 #     long_sync_word = np.repeat(s_word,samps_per_bit)
@@ -216,6 +252,7 @@ def demodulate_packet(input_samples, tag_params, radio_params, enable_plotting=F
         plot_time_psd_scat(input_samples, radio_params.samplerate_hz, "Raw Received Samples")
     
     for itag in range(tag_params.ntags):
+        logger.info("Demodding tag %s", itag)
         itagParams = tag_params.get_tag(itag)
         proc_samples = input_samples
         
@@ -228,7 +265,10 @@ def demodulate_packet(input_samples, tag_params, radio_params, enable_plotting=F
         # plot_time_psd_scat(proc_samples, radio_params.samplerate_hz, "Filtered & AGCed Samples")
 
         #correlation to find if signal is present and, if so, what the offset freq is
-        proc_samples = time_freq_code_search(proc_samples, itagParams.goldcode, itagParams.sps, radio_params.samplerate_hz, enable_plotting)
+        max_freq_dev_hz = 450
+        max_output_freq_dev_hz = 150
+        npts_freq_search = int(np.ceil(max_freq_dev_hz *2/max_output_freq_dev_hz)+1)
+        proc_samples = time_freq_code_search(proc_samples, itagParams.goldcode, itagParams.sps, radio_params.samplerate_hz, max_freq_dev_hz, npts_freq_search, enable_plotting)
 
         #despread
         bits_to_calc = len(itagParams.all_bits)
@@ -253,7 +293,7 @@ def demodulate_packet(input_samples, tag_params, radio_params, enable_plotting=F
         proc_samples = mm_time_recovery(despread_samples_repeat, itagParams.sps)
         
         #coarse f correct
-        proc_samples = course_f_correct(proc_samples, radio_params.samplerate_hz)
+        # proc_samples = course_f_correct(proc_samples, radio_params.samplerate_hz)
         # plt.figure()
         # plt.plot(proc_samples)
         # plt.title("After course f correct")
@@ -293,15 +333,19 @@ def demodulate_packet(input_samples, tag_params, radio_params, enable_plotting=F
                 proc_bits[i] = 1 if ones_count > zeros_count else 0
                 
         # logger.info("proc_bits:%s",proc_bits)
+        corrected_proc_bits, payload_bits = sync_word_search_correction(proc_bits, sync_seq, bitsPerPacket)
         
         # rx_bits_payload, sync_word_corr = sync_word_sync(rx_bits_raw*2-1, tag_params.sync_bits*2-1, len(tag_params.payload_bits), samps_per_bit)
+                
+        logger.info("Transmitted actual bits:  %s", itagParams.actual_bits)
+        logger.info("Raw processed bits:       %s", proc_bits.astype(int)) 
+        logger.info("Corrected processed bits: %s", corrected_proc_bits.astype(int)) 
         
-        logger.info("Processed bits: %s",proc_bits) 
-        logger.info("Transmitted actual bits: %s", itagParams.actual_bits)
+        
         # logger.info("Sync word correlation: %s", sync_word_corr)
         
         num_bits = len(itagParams.actual_bits)
-        num_errors = sum(abs(proc_bits-itagParams.actual_bits))
+        num_errors = sum(abs(corrected_proc_bits-itagParams.actual_bits))
         BER = num_errors/num_bits
         
         logger.info("BER (tag %s): %s", itag, BER) 

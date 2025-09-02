@@ -60,25 +60,25 @@ def get_simulated_samples(n_tags: int, radio_params: IoTBSConst.RadioSettings, s
     all_pp = IoTBSConst.TagParams()
 
     for tag in range(n_tags):
-        spp = IoTBSConst.SimulatedPacketParams(
+        spp = IoTBSConst.SimulatedPacketParams( 
             tag_id = tag,
             preamble_bits = IoTBSConst.preamble,
             # preamble_bits = np.array([1, 1, 1, 1, 1, 0, 1, 0]),
-            # sync_bits = IoTBSConst.sync_seq,
-            sync_bits = [],
+            sync_bits = IoTBSConst.sync_seq,
+            # sync_bits = [],
             # n_payload_bits = 100,
             # payload_bits=np.array([1, 0, 1, 0, 1, 0, 0, 1]),
             payload_bits=np.random.randint(0,2,IoTBSConst.bitsPerPacket),
             pad_bits=np.zeros(10),
             sps=10,
-            snr_db=10.0,
+            snr_db=40,#10.0,
             #tx_pwr_dbm=
             #noise_pwr_dbm=
             #oneway_tag2modem_dist_m
-            frequency_offset_hz=5.0,
+            frequency_offset_hz=np.random.uniform(-500,500),
             # time_delay_sec=0.05,
-            time_delay_sec=np.random.uniform(0,0.25),
-            total_duration_sec = 0.5,
+            time_delay_sec=np.random.uniform(0.001,0.25),
+            total_duration_sec = 1,
             samplerate_hz = radio_params.samplerate_hz
         )
         # spp.gen_ideal_samples()
