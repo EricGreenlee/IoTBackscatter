@@ -220,7 +220,7 @@ def sync_word_search_correction(in_bits, sync_seq, payload_len):
         first_peak_sign = 1
         
     out_all_bits = (in_bits_bip*first_peak_sign+1)/2
-    out_payload_bits = out_all_bits[first_peak_sample_num:first_peak_sample_num+payload_len]
+    out_payload_bits = out_all_bits[first_peak_sample_num+len(sync_seq):first_peak_sample_num+len(sync_seq)+payload_len]
     
     # plt.figure()
     # plt.plot(sync_corr)
@@ -336,17 +336,26 @@ def demodulate_packet(input_samples, tag_params, radio_params, enable_plotting=F
         corrected_proc_bits, payload_bits = sync_word_search_correction(proc_bits, sync_seq, bitsPerPacket)
         
         # rx_bits_payload, sync_word_corr = sync_word_sync(rx_bits_raw*2-1, tag_params.sync_bits*2-1, len(tag_params.payload_bits), samps_per_bit)
-                
+        # logger.info("Sync word correlation: %s", sync_word_corr)
+   
         logger.info("Transmitted actual bits:  %s", itagParams.actual_bits)
         logger.info("Raw processed bits:       %s", proc_bits.astype(int)) 
         logger.info("Corrected processed bits: %s", corrected_proc_bits.astype(int)) 
         
+        logger.info("Transmitted payload bits:  %s", itagParams.payload_bits)
+        logger.info("Received payload bits:     %s", payload_bits.astype(int))
         
-        # logger.info("Sync word correlation: %s", sync_word_corr)
         
-        num_bits = len(itagParams.actual_bits)
-        num_errors = sum(abs(corrected_proc_bits-itagParams.actual_bits))
-        BER = num_errors/num_bits
+        
+        # num_bits = len(itagParams.actual_bits)
+        # num_errors = sum(abs(corrected_proc_bits-itagParams.actual_bits))
+        try:
+            num_bits = len(itagParams.payload_bits)
+            num_errors = sum(abs(payload_bits-itagParams.payload_bits))
+            BER = num_errors/num_bits
+        except:
+            logger.warning("BER unable to be computed")
+            BER = 1.0
         
         logger.info("BER (tag %s): %s", itag, BER) 
         

@@ -15,12 +15,13 @@ class PacketParams:
     pad_bits: np.ndarray                #bits at the end to pad out
     sps: int            # samples per chip/bit
     samplerate_hz: int
-    total_duration_sec: float 
+    
     
     # computed fields
     actual_bits: np.ndarray = field(init=False)
     all_bits: np.ndarray = field(init=False)   # concatenated bits
     goldcode: List[int] = field(init=False)     
+    total_duration_sec: float = field(init=False)
     
     samples: Optional[List[float]] = field(default=None)  # computed later
 
@@ -29,6 +30,7 @@ class PacketParams:
         self.goldcode = GCs[self.tag_id]
         self.actual_bits = np.concatenate([self.preamble_bits, self.sync_bits, self.payload_bits])
         self.all_bits = np.concatenate([self.actual_bits, self.pad_bits])
+        self.total_duration_sec = len(self.all_bits)*self.sps*len(self.goldcode)/self.samplerate_hz/packet_on_ratio
         
     def gen_ideal_samples(self):
         # self.samples = np.zeros(self.sps*len(self.goldcode)*len(self.all_bits)).astype(np.complex64)
@@ -43,9 +45,26 @@ class SimulatedPacketParams(PacketParams):
     # snr_db: float = 30.0          # Signal-to-noise ratio in dB
     tx_pwr_dbm: float = 30.0
     noise_pwr_dbm: float = 0
-    frequency_offset_hz: float = 0.0  # Frequency offset in Hz
-    time_delay_sec: float = 0.0       # Time delay in seconds
     oneway_tag2modem_dist_m: float = 0
+    frequency_offset_hz: float = 0.0  # Frequency offset in Hz
+    time_delay_mode: str = "rand"      # Time delay in seconds
+
+    # computed fields
+    time_delay_sec: float = field(init=False)      # Time delay in seconds
+    integer_delay_samples: int = field(init=False)
+    fractional_delay_samples: float = field(init=False)
+    
+    def __post_init__(self):
+        # Call parent's __post_init__ first to set up all_bits, goldcode, etc.
+        super().__post_init__()
+        
+        if self.time_delay_mode == "zero":
+            self.time_delay_sec = 0
+        elif self.time_delay_mode == "rand":
+            self.time_delay_sec = np.random.uniform(0.0, self.total_duration_sec*(1-packet_on_ratio))
+        else:
+            print("**** ERROR: time_delay_mode invalid ****")
+            self.time_delay_sec = 0
 
     def gen_nonideal_samples(self):
         
@@ -67,22 +86,23 @@ class SimulatedPacketParams(PacketParams):
         
         # Time delay - integer and fractional parts
         total_delay_samples = self.time_delay_sec * self.samplerate_hz
-        integer_delay_samples = int(total_delay_samples)
-        fractional_delay_samples = total_delay_samples - integer_delay_samples
+        self.integer_delay_samples = int(total_delay_samples)
+        self.fractional_delay_samples = total_delay_samples - self.integer_delay_samples
         
         # Integer delay using np.roll
-        self.samples = np.roll(self.samples, integer_delay_samples)
+        self.samples = np.roll(self.samples, self.integer_delay_samples)
         
-        # # Fractional delay using interpolation
-        # if fractional_delay_samples != 0:
-        #     # Create fractional delay filter
-        #     delay_filter_length = 41  # odd number for symmetric filter
-        #     n = np.arange(-delay_filter_length//2, delay_filter_length//2) # ...-3,-2,-1,0,1,2,3...
-        #     h = np.sinc(n - fractional_delay_samples) # calc filter taps
-        #     h *= np.hamming(delay_filter_length) # window the filter to make sure it decays to 0 on both sides
-        #     h /= np.sum(h) # normalize to get unity gain, we don't want to change the amplitude/power
-        #     # out_samples = np.convolve(samples, h) # apply filter
-        #     self.samples = signal.convolve(self.samples, h)
+        # Fractional delay using interpolation
+        if self.fractional_delay_samples != 0:
+            # Create fractional delay filter
+            
+            delay_filter_length = 41  # odd number for symmetric filter
+            n = np.arange(-delay_filter_length//2, delay_filter_length//2) # ...-3,-2,-1,0,1,2,3...
+            h = np.sinc(n - self.fractional_delay_samples) # calc filter taps
+            h *= np.hamming(delay_filter_length) # window the filter to make sure it decays to 0 on both sides
+            h /= np.sum(h) # normalize to get unity gain, we don't want to change the amplitude/power
+            # out_samples = np.convolve(samples, h) # apply filter
+            self.samples = signal.convolve(self.samples, h, mode='same')
             
             # h = np.sinc(np.arange(-delay_filter_length//2, delay_filter_length//2 + 1) - fractional_delay_samples)
             # h *= np.hamming(delay_filter_length)  # windowing to reduce artifacts
@@ -104,7 +124,6 @@ class SimulatedPacketParams(PacketParams):
         return (f"SimPacket: bits={self.all_bits},\n "
                 f"Goldcode={self.goldcode},\n"
                 f"samples_per_signal={self.sps}, "
-                # f"SNR={self.snr_db} dB, freq_offset={self.frequency_offset_hz} Hz, "
                 f"time_delay={self.time_delay_sec}s")
 
 @dataclass
@@ -135,8 +154,14 @@ class TagParams:
         sum_str = ""
         for tag in range(self.ntags):
             cur_tag = self.tagParams[tag]
-            sum_str = sum_str + f"\nid = {cur_tag.tag_id}\ttime_delay_sec={round(cur_tag.time_delay_sec,2)}"\
-            f"\tfrequency_offset_hz={cur_tag.frequency_offset_hz}"
+            sum_str = sum_str + f"\nid = {cur_tag.tag_id}"\
+            f"\ttx_pwr_dbm = {cur_tag.tx_pwr_dbm}"\
+            f"\tnoise_pwr_dbm = {cur_tag.noise_pwr_dbm}"\
+            f"\toneway_tag2modem_dist_m = {cur_tag.oneway_tag2modem_dist_m}"\
+            f"\tfrequency_offset_hz={cur_tag.frequency_offset_hz}"\
+            f"\ttime_delay_sec={round(cur_tag.time_delay_sec,2)}"\
+            f"\tinteger_delay_samples={cur_tag.integer_delay_samples}"\
+            f"\tfractional_delay_samples={round(cur_tag.fractional_delay_samples,2)}"
         
         return sum_str
     
@@ -178,3 +203,4 @@ num_gcs = len(GCs)
 preamble = np.array([1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0])
 sync_seq = np.array([0,1,0,1,1,0,0,1,1,1,1,1,0,0,0,0])
 bitsPerPacket = 16
+packet_on_ratio = 0.2

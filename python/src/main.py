@@ -74,13 +74,14 @@ def get_simulated_samples(n_tags: int, radio_params: IoTBSConst.RadioSettings, s
             # snr_db=40,#10.0,
             tx_pwr_dbm=30.0,
             noise_pwr_dbm=0.0,
-            oneway_tag2modem_dist_m = 1.0, #1m with 30dB SNR seems to work
+            oneway_tag2modem_dist_m = 0.0, #1m with 30dB SNR seems to work
             frequency_offset_hz=np.random.uniform(-500,500),
             # time_delay_sec=0.05,
-            time_delay_sec=np.random.uniform(0.001,0.25),
-            total_duration_sec = 1,
+            time_delay_mode = "rand",
+            # time_delay_sec=np.random.uniform(0.001,0.25),
+            # total_duration_sec = 1,
             samplerate_hz = radio_params.samplerate_hz
-        )
+        ) 
         # spp.gen_ideal_samples()
         spp.gen_nonideal_samples()
         
@@ -135,6 +136,7 @@ def main():
     all_results = []  # Store results from each iteration
     total_errors_per_tag = {}
     total_bits_per_tag = {}
+    zero_ber_count_per_tag = {}  # Track packets with BER = 0
     
     # Run multiple iterations
     for iteration in range(args.iterations):
@@ -165,8 +167,13 @@ def main():
             if tag_id not in total_errors_per_tag:
                 total_errors_per_tag[tag_id] = 0
                 total_bits_per_tag[tag_id] = 0
+                zero_ber_count_per_tag[tag_id] = 0
             total_errors_per_tag[tag_id] += tag_result['num_errors']
             total_bits_per_tag[tag_id] += tag_result['num_bits']
+            
+            # Track packets with zero BER
+            if tag_result['ber'] == 0:
+                zero_ber_count_per_tag[tag_id] += 1
     
     # Calculate and display comprehensive statistics table
     logger.info("=== COMPREHENSIVE STATISTICS OVER %d ITERATIONS ===", args.iterations)
@@ -182,8 +189,8 @@ def main():
             error_rates_by_tag[tag_id].append(error_rate)
     
     # Print comprehensive table header
-    logger.info("Tag ID | Total Errors | Total Bits | Overall BER | Min BER    | Max BER    | Mean BER   | Median BER")
-    logger.info("-------|--------------|------------|-------------|------------|------------|------------|------------")
+    logger.info("Tag ID | Total Errors | Total Bits | Overall BER | Zero BER Count | Min BER    | Max BER    | Mean BER   | Median BER")
+    logger.info("-------|--------------|------------|-------------|----------------|------------|------------|------------|------------")
     
     # Print statistics for each tag
     overall_total_errors = 0
@@ -203,8 +210,9 @@ def main():
             mean_ber = sum(error_rates) / len(error_rates) if error_rates else 0
             median_ber = sorted(error_rates)[len(error_rates)//2] if error_rates else 0
             
-            logger.info("  %3d  |        %5d |      %5d |    %8.6f |   %8.6f |   %8.6f |   %8.6f |   %8.6f", 
-                       tag_id, total_errors, total_bits, overall_ber, min_ber, max_ber, mean_ber, median_ber)
+            zero_ber_count = zero_ber_count_per_tag[tag_id]
+            logger.info("  %3d  |        %5d |      %5d |    %8.6f |         %6d |   %8.6f |   %8.6f |   %8.6f |   %8.6f", 
+                       tag_id, total_errors, total_bits, overall_ber, zero_ber_count, min_ber, max_ber, mean_ber, median_ber)
             
             overall_total_errors += total_errors
             overall_total_bits += total_bits
@@ -212,9 +220,12 @@ def main():
     # Overall combined statistics
     if overall_total_bits > 0:
         combined_ber = overall_total_errors / overall_total_bits
-        logger.info("-------|--------------|------------|-------------|------------|------------|------------|------------")
-        logger.info("TOTAL  |        %5d |      %5d |    %8.6f |            |            |            |            ", 
-                   overall_total_errors, overall_total_bits, combined_ber) 
+        # Calculate total zero BER count across all tags
+        total_zero_ber_count = sum(zero_ber_count_per_tag.values())
+        
+        logger.info("-------|--------------|------------|-------------|----------------|------------|------------|------------|------------")
+        logger.info("TOTAL  |        %5d |      %5d |    %8.6f |         %6d |            |            |            |            ", 
+                   overall_total_errors, overall_total_bits, combined_ber, total_zero_ber_count) 
     
     if args.plot:
         # Set up keyboard event handler to close all plots
