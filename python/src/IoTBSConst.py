@@ -57,6 +57,8 @@ class SimulatedPacketParams(PacketParams):
         #time/phase delay by partial samples
         
         #frequency drift
+        time_sec = np.linspace(0, self.total_duration_sec -1/self.samplerate_hz,int(self.total_duration_sec *self.samplerate_hz))
+        self.samples = self.samples*np.exp(1j*2*np.pi*self.frequency_offset_hz*time_sec)
         
         #add background noise
         noise_pwr_raw = 10**(-self.snr_db/10)
@@ -98,7 +100,8 @@ class TagParams:
         sum_str = ""
         for tag in range(self.ntags):
             cur_tag = self.tagParams[tag]
-            sum_str = sum_str + f"\nid = {cur_tag.tag_id}\ttime_delay_sec={cur_tag.time_delay_sec}"
+            sum_str = sum_str + f"\nid = {cur_tag.tag_id}\ttime_delay_sec={round(cur_tag.time_delay_sec,2)}"\
+            f"\tfrequency_offset_hz={cur_tag.frequency_offset_hz}\tsnr_db:{cur_tag.snr_db}"
         
         return sum_str
     

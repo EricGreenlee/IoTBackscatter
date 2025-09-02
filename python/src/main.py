@@ -15,7 +15,7 @@ np.set_printoptions(linewidth=120, threshold=np.inf)
 # ----------------------------
 logger = logging.getLogger("demodulator")  # single global logger
 
-def configure_logging(verbosity_level: int):
+def configure_logging(verbosity_level: int): 
     """
     Configure logging programmatically for both console and file.
     verbosity_level: 0=ERROR, 1=WARNING, 2=INFO, 3=DEBUG
@@ -75,7 +75,7 @@ def get_simulated_samples(n_tags: int, radio_params: IoTBSConst.RadioSettings, s
             #tx_pwr_dbm=
             #noise_pwr_dbm=
             #oneway_tag2modem_dist_m
-            frequency_offset_hz=500.0,
+            frequency_offset_hz=5.0,
             # time_delay_sec=0.05,
             time_delay_sec=np.random.uniform(0,0.25),
             total_duration_sec = 0.5,
@@ -102,7 +102,7 @@ def get_file_samples(path):
 
 def get_sdr_samples():
     logger.info("Streaming live samples from SDR hardware")
-    return []  # TODO: implement
+    return []  # TODO: implement 
 
 # Command line interace
 def parse_args():
@@ -114,6 +114,7 @@ def parse_args():
                         help="-v=WARNING, -vv=INFO, -vvv=DEBUG")
     parser.add_argument("-t","--n_tags", type=int, default=1, help="Number of backscatter tags simultaneously transmitting")
     parser.add_argument("-i","--iterations", type=int, default=1, help="Number of simulation iterations to run")
+    parser.add_argument("-p","--plot", action="store_true", help="Enable plotting of figures")
     return parser.parse_args()
 
 def main():
@@ -155,8 +156,8 @@ def main():
             logger.error(f"Unknown source: {args.source}")
             sys.exit(1)
 
-        logger.debug("Packet to demod: %s", samples)
-        iteration_results = demod.demodulate_packet(samples, tag_params, radio_params)
+        # logger.debug("Packet to demod: %s", samples)
+        iteration_results = demod.demodulate_packet(samples, tag_params, radio_params, enable_plotting=args.plot)
         all_results.append(iteration_results)
         
         # Accumulate totals for each tag
@@ -214,8 +215,21 @@ def main():
         logger.info("-------|--------------|------------|-------------|------------|------------|------------|------------")
         logger.info("TOTAL  |        %5d |      %5d |    %8.6f |            |            |            |            ", 
                    overall_total_errors, overall_total_bits, combined_ber) 
+    
+    if args.plot:
+        # Set up keyboard event handler to close all plots
+        def on_key(event):
+            if event.key == 'q':
+                plt.close('all')
+                logger.info("All plot windows closed")
         
-    plt.show()
+        # Connect the key event handler to all figures
+        for fig_num in plt.get_fignums():
+            fig = plt.figure(fig_num)
+            fig.canvas.mpl_connect('key_press_event', on_key)
+        
+        logger.info("Press 'q' in any plot window to close all plots")
+        plt.show()
 
 if __name__ == "__main__":
     main()
