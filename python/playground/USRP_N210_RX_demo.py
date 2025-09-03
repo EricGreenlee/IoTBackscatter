@@ -228,7 +228,7 @@ def main():
         # Save samples with timestamp and radio settings (unless disabled)
         if not args.no_save:
             # Create samples directory if it doesn't exist
-            samples_dir = os.path.join(os.path.dirname(__file__), 'samples')
+            samples_dir = os.path.join(os.path.dirname(__file__), 'local_samples')
             os.makedirs(samples_dir, exist_ok=True)
             
             # Generate filename with timestamp and radio settings

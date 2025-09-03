@@ -99,7 +99,25 @@ def get_simulated_samples(n_tags: int, radio_params: IoTBSConst.RadioSettings, s
 
 def get_file_samples(path):
     logger.info(f"Reading samples from file: {path}")
-    return []  # TODO: implement
+    import os
+    
+    # If path is just a filename, look in src/samples directory
+    if not os.path.isabs(path) and not os.path.dirname(path):
+        samples_dir = os.path.join(os.path.dirname(__file__), 'samples')
+        full_path = os.path.join(samples_dir, path)
+    else:
+        full_path = path
+    
+    try:
+        samples = np.load(full_path)
+        logger.info(f"Loaded {len(samples)} samples from {full_path}")
+        return samples
+    except FileNotFoundError:
+        logger.error(f"File not found: {full_path}")
+        raise
+    except Exception as e:
+        logger.error(f"Error loading samples from {full_path}: {e}")
+        raise
 
 def get_sdr_samples():
     logger.info("Streaming live samples from SDR hardware")
@@ -152,6 +170,8 @@ def main():
                 logger.error("--file must be specified when --source=file")
                 sys.exit(1)
             samples = get_file_samples(args.file)
+            _, tag_params = get_simulated_samples(args.n_tags, radio_params, seed)
+
         elif args.source == "sdr":
             samples = get_sdr_samples()
         else:

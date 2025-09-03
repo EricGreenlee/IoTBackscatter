@@ -13,4 +13,4 @@ venv/
 ENV/
 
 # Sample data folders
-**/samples/
+**/local_samples/

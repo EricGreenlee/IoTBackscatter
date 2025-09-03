@@ -1,19 +1,37 @@
 #!/bin/bash
 
 # Backscatter Experiment Startup Script
-# This script starts the HackRF transmitter and Python receiver in separate terminals
+# This script starts the HackRF transmitter and USRP N210 receiver with automatic cleanup
 
 echo "Starting backscatter experiment..."
 
-# Start HackRF transmitter in a new terminal
-gnome-terminal --title="HackRF Transmitter" -- bash -c "hackrf_transfer -f 915000000 -x 47 -c 127; exec bash"
+# Create a temporary file to track the HackRF process
+HACKRF_PID_FILE="/tmp/hackrf_transmitter.pid"
 
-# Wait a moment for the first terminal to start
+# Start HackRF transmitter in background and save its PID
+echo "Starting HackRF transmitter..."
+# hackrf_transfer -f 915000000 -x 47 -c 127 &
+hackrf_transfer -f 915200000 -x 47 -c 127 &
+HACKRF_PID=$!
+echo $HACKRF_PID > $HACKRF_PID_FILE
+echo "HackRF transmitter started with PID: $HACKRF_PID"
+
+# Wait a moment for the transmitter to initialize
 sleep 2
 
-# Start Python main.py in another terminal
-gnome-terminal --title="Python Receiver" -- bash -c "cd python && python src/main.py; exec bash"
+# Start USRP N210 receiver in foreground (blocks until complete)
+echo "Starting USRP N210 receiver..."
+cd python && python3 playground/USRP_N210_RX_demo.py --freq 915e6 --rate 1e6 --gain 50 --num_samps 100000 --plot
 
-echo "Experiment started! Check the two terminal windows."
-echo "HackRF Transmitter: hackrf_transfer -f 915000000 -x 47 -c 127"
-echo "Python Receiver: python/src/main.py"
+# When receiver finishes, stop the HackRF transmitter
+if [ -f $HACKRF_PID_FILE ]; then
+    HACKRF_PID=$(cat $HACKRF_PID_FILE)
+    echo "Stopping HackRF transmitter (PID: $HACKRF_PID)..."
+    kill $HACKRF_PID 2>/dev/null
+    rm -f $HACKRF_PID_FILE
+    echo "HackRF transmitter stopped."
+else
+    echo "Warning: Could not find HackRF PID file"
+fi
+
+echo "Experiment complete!"
