@@ -86,6 +86,15 @@ cd arduino/
 # (Upload via Arduino IDE or command line tools)
 ```
 
+#### USRP N210 Receiver Demo
+Capture samples from a USRP N210 SDR for analysis and testing:
+```bash
+cd python/playground/
+python USRP_N210_RX_demo.py --freq 915e6 --rate 1e6 --gain 50 --num_samps 10000 --plot
+```
+
+The script automatically saves samples with timestamp and radio settings to the `samples/` folder.
+
 #### Meta Design Script
 Run the meta design optimization script:
 ```bash
