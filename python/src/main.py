@@ -147,7 +147,7 @@ def main():
     radio_params = IoTBSConst.RadioSettings(
         # samplerate_hz = 252315,
         samplerate_hz = 250000,
-        carrier_freq_hz = 915100000
+        carrier_freq_hz = 915000000
     )
 
     # Initialize tracking variables
