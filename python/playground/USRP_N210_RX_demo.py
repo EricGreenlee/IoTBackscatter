@@ -93,7 +93,7 @@ def receive_samples(usrp, num_samps, timeout=3.0):
     num_rx_samps = rx_streamer.recv(recv_buffer, metadata, timeout)
     
     if num_rx_samps != num_samps:
-        print(f"Warning: Requested {num_samps} samples, received {num_rx_samps}")
+        print(f"Warning: Requested {num_samps} samples, received {num_rx_samps}\n")
         
     if metadata.error_code != uhd.types.RXMetadataErrorCode.none:
         print(f"RX metadata error: {metadata.strerror()}")
@@ -214,8 +214,9 @@ def main():
         print("Letting hardware settle...")
         time.sleep(0.5)
         
-        # Receive samples
+        # Receive samples, ignoring the first 100
         start_time = time.time()
+        dummy_samples = receive_samples(usrp, 100)
         samples = receive_samples(usrp, args.num_samps)
         rx_time = time.time() - start_time
         

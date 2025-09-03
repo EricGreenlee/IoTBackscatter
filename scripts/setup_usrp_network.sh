@@ -24,6 +24,19 @@ echo "  Host IP: 192.168.10.1"
 echo "  USRP IP: 192.168.10.2"
 echo "  Internet connectivity preserved on WiFi"
 
+# Optimize network buffers for USRP
+echo "Configuring network buffers for USRP..."
+sudo sysctl -w net.core.wmem_max=50000000
+sudo sysctl -w net.core.rmem_max=50000000
+sudo sysctl -w net.core.wmem_default=50000000
+sudo sysctl -w net.core.rmem_default=50000000
+
+# Set thread priority capability for Python
+echo "Setting thread priority capability for Python..."
+PYTHON_BIN=$(readlink -f $(which python3))
+echo "Python binary: $PYTHON_BIN"
+sudo setcap 'cap_sys_nice=eip' $PYTHON_BIN
+
 # Test USRP connectivity
 echo "Testing USRP connectivity..."
 ping -c 3 192.168.10.2
