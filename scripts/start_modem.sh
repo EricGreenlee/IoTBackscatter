@@ -11,7 +11,7 @@ HACKRF_PID_FILE="/tmp/hackrf_transmitter.pid"
 # Start HackRF transmitter in background and save its PID
 echo "Starting HackRF transmitter..."
 # hackrf_transfer -f 915000000 -x 47 -c 127 &
-hackrf_transfer -f 915200000 -x 47 -c 127 &
+hackrf_transfer -f 914840800 -x 47 -c 127 -a 1 &
 HACKRF_PID=$!
 echo $HACKRF_PID > $HACKRF_PID_FILE
 echo "HackRF transmitter started with PID: $HACKRF_PID"

@@ -93,7 +93,7 @@ def receive_samples(usrp, num_samps, timeout=3.0):
     num_rx_samps = rx_streamer.recv(recv_buffer, metadata, timeout)
     
     if num_rx_samps != num_samps:
-        print(f"Warning: Requested {num_samps} samples, received {num_rx_samps}\n")
+        print(f"Warning: Requested {num_samps} samples, received {num_rx_samps}")
         
     if metadata.error_code != uhd.types.RXMetadataErrorCode.none:
         print(f"RX metadata error: {metadata.strerror()}")
@@ -236,7 +236,7 @@ def main():
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             freq_mhz = int(args.freq / 1e6)
             rate_msps = args.rate / 1e6
-            filename = f"usrp_n210_{timestamp}_{freq_mhz}MHz_{rate_msps:.1f}Msps_{args.gain}dB_{args.num_samps}samps.npy"
+            filename = f"usrp_n210_{timestamp}_{freq_mhz}MHz_{rate_msps:.3f}Msps_{args.gain}dB_{args.num_samps}samps.npy"
             filepath = os.path.join(samples_dir, filename)
             
             np.save(filepath, samples)
