@@ -44,7 +44,7 @@ def agc(samples,out_amplitude):
     
     return(samples_out) 
 
-def time_freq_code_search(input_samples, target_gc, input_sps, fs_hz, max_freq_dev_hz, nfreq_pts : int, enable_plotting=False):
+def time_freq_code_search(input_samples, target_corr_samples, input_sps, fs_hz, max_freq_dev_hz, nfreq_pts : int, enable_plotting=False):
     #must get the frequency to within ~150 Hz for the costas loop to be able to correct it
     
     freq_offsets_hz = np.linspace(-1*max_freq_dev_hz, max_freq_dev_hz, nfreq_pts)#[-100,-50,0,50,100]
@@ -52,10 +52,10 @@ def time_freq_code_search(input_samples, target_gc, input_sps, fs_hz, max_freq_d
     # freq_offsets_hz = [0]
     time_delays_sec = np.linspace(0, (len(input_samples)-1/fs_hz), len(input_samples))
     
-    target_gc_stretch = np.repeat(target_gc,input_sps)
+    # target_gc_stretch = np.repeat(target_gc,input_sps)
     
     # logger.info(f"len(samples): {len(samples)}, len(target_gc_stretch): {len(target_gc_stretch)}, dif: {len(samples)-len(target_gc_stretch)}")
-    corr_len = len(input_samples)-len(target_gc_stretch)+1
+    corr_len = len(input_samples)-len(target_corr_samples)+1
     # logger.info(f"corr_len: {corr_len}")
     
     # Create meshgrid for time delay and frequency offset
@@ -64,16 +64,16 @@ def time_freq_code_search(input_samples, target_gc, input_sps, fs_hz, max_freq_d
     
     for j, freq_offset_hz in enumerate(freq_offsets_hz):
         # logger.info(f"Loop {j}, freq_offset_hz: {freq_offset_hz}")
-        test_samples = input_samples * np.exp(-1j*2*np.pi*freq_offset_hz*time_delays_sec)
+        test_samples = input_samples * np.exp(+1j*2*np.pi*freq_offset_hz*time_delays_sec)
         
-        correlation = np.correlate(test_samples, target_gc_stretch, mode='valid')
+        correlation = np.correlate(test_samples, target_corr_samples, mode='valid')
         Z[j, :] = np.abs(correlation)
     
-        # if enable_plotting:
-        #     plt.figure()
-        #     plt.plot(abs(correlation))
-        #     plt.grid("on")
-        #     plt.title(f"Correlation with Repeated Goldcode, freq_offset_hz: {freq_offset_hz}")
+        if enable_plotting:
+            plt.figure()
+            plt.plot(abs(correlation))
+            plt.grid("on")
+            plt.title(f"Correlation with Repeated Goldcode, freq_offset_hz: {freq_offset_hz}")
     
     if enable_plotting:
         fig_lab = plt.figure()
@@ -96,10 +96,11 @@ def time_freq_code_search(input_samples, target_gc, input_sps, fs_hz, max_freq_d
     # logger.info(f"time index of max correlation: {max_corr_idx[1]}")
     
     output_samples = input_samples * np.exp(-1j*2*np.pi*freq_adj_hz*time_delays_sec)
-    correlation = np.correlate(output_samples, target_gc_stretch, mode='valid')
+    correlation = np.correlate(output_samples, target_corr_samples, mode='valid')
 
     threshold = 400 #approximately sps*gclen*0.5
-    peaks, _ = signal.find_peaks(abs(correlation), height=threshold)
+    peaks, properties = signal.find_peaks(abs(correlation), height=threshold, prominence=threshold*0.3)
+    
     # Get the first peak above threshold
     if len(peaks) > 0:
         first_peak_index = peaks[0]
@@ -112,7 +113,56 @@ def time_freq_code_search(input_samples, target_gc, input_sps, fs_hz, max_freq_d
         logger.warning("No peaks found!")
         first_peak_index = 0
         first_peak_sign = 1
-    output_samples = np.roll(output_samples, -1*first_peak_index)
+        
+    #roll to the first peak
+    intermediate_samples = np.roll(output_samples, -1*first_peak_index)
+    
+    #find the sps and resample
+    if len(peaks) > 1:
+        # Compute differences between consecutive peak indexes
+        peak_diffs = np.diff(peaks)
+        avg_peak_diff = np.mean(peak_diffs)
+        expected_peak_diff = 1270  # Expected samples between peaks
+        
+        logger.info("Found %d peaks at indexes: %s", len(peaks), peaks.tolist())
+        logger.info("Peak differences: %s", peak_diffs.tolist())
+        logger.info("Average peak difference: %.2f samples", avg_peak_diff)
+        logger.info("Expected peak difference: %d samples", expected_peak_diff)
+        # logger.info("Average peak difference: %.3f ms", avg_peak_diff/radio_params.samplerate_hz*1000)
+        
+        # Resample signal to correct timing
+        resample_ratio = expected_peak_diff / avg_peak_diff
+        logger.info("Resampling ratio: %.6f", resample_ratio)
+        
+        output_samples = signal.resample_poly(intermediate_samples, int(resample_ratio*1000), 1000)
+        logger.info("Resampled signal length: %d samples", len(output_samples))
+        
+        output_samples = output_samples[0:1270*(96+4)]
+        logger.info("Truncated signal to %d samples", len(output_samples))
+        
+        # Plot correlation and peaks
+        if enable_plotting:
+            plt.figure(figsize=(12, 6))
+            plt.subplot(2, 1, 1)
+            plt.plot(abs(correlation))
+            plt.plot(peaks, abs(correlation)[peaks], 'rx', markersize=10, label='Detected Peaks')
+            plt.axhline(y=threshold, color='r', linestyle='--', label=f'Threshold={threshold}')
+            plt.title('Correlation with Preamble Pattern')
+            plt.xlabel('Sample Index')
+            plt.ylabel('Correlation Magnitude')
+            plt.legend()
+            plt.grid(True)
+            
+            plt.subplot(2, 1, 2)
+            plt.plot(range(len(peak_diffs)), peak_diffs, 'bo-')
+            plt.axhline(y=avg_peak_diff, color='r', linestyle='--', label=f'Average={avg_peak_diff:.1f}')
+            plt.title('Peak Spacing')
+            plt.xlabel('Peak Pair Index')
+            plt.ylabel('Sample Difference')
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+    
     
     return output_samples
     
@@ -141,19 +191,19 @@ def mm_time_recovery(samples, samps_per_symbol):
     return(out)
 
 # course frequency correction handled in time_freq_code search
-# def course_f_correct(samples, samp_rate):
-#     samples_sqr = samples**2
-#     psd_sq = np.fft.fftshift(np.abs(np.fft.fft(samples_sqr)))
-#     f = np.linspace(-samp_rate/2.0, samp_rate/2.0, len(psd_sq))
-#     max_freq = f[np.argmax(psd_sq)]
-#     Ts = 1/samp_rate # calc sample period
-#     # t = np.arange(0, Ts*len(samples), Ts) # create time vector
-#     t = np.linspace(0,(len(samples)-1)/samp_rate, len(samples))
-#     samples = samples * np.exp(-1j*2*np.pi*max_freq*t/2.0)
+def course_f_correct(samples, samp_rate):
+    samples_sqr = samples**2
+    psd_sq = np.fft.fftshift(np.abs(np.fft.fft(samples_sqr)))
+    f = np.linspace(-samp_rate/2.0, samp_rate/2.0, len(psd_sq))
+    max_freq = f[np.argmax(psd_sq)]
+    Ts = 1/samp_rate # calc sample period
+    # t = np.arange(0, Ts*len(samples), Ts) # create time vector
+    t = np.linspace(0,(len(samples)-1)/samp_rate, len(samples))
+    samples = samples * np.exp(-1j*2*np.pi*max_freq*t/2.0)
     
-#     logger.debug("coarse freq offset: %s", max_freq)
+    logger.debug("coarse freq offset: %s", max_freq)
     
-#     return(samples)
+    return(samples)
 
 def costas_loop(samples, samp_rate):
     
@@ -249,13 +299,13 @@ def sync_word_search_correction(in_bits, sync_seq, payload_len):
 def demodulate_packet(input_samples, tag_params, radio_params, enable_plotting=False):
     logger.info("Processing %s samples generated by %s tags", len(input_samples), tag_params.ntags) 
     
-    start_ind = 0
-    num_samps = 10000
+    start_ind = 127000+124000
+    num_samps = 1270*100
     
     subset_samples = input_samples[start_ind:start_ind+num_samps]
     
     #mix to center at -50kHz
-    center_freq_hz = -50e3
+    center_freq_hz = -50e3+505
     time_array_sec = np.linspace(0,(len(subset_samples)-1)/radio_params.samplerate_hz, len(subset_samples))
     mixed_samples = subset_samples*np.exp(-1j*2*np.pi*center_freq_hz*time_array_sec)
     # mixed_samples = input_samples
@@ -264,10 +314,10 @@ def demodulate_packet(input_samples, tag_params, radio_params, enable_plotting=F
     filt_samples = lpf(mixed_samples, 25e3, radio_params.samplerate_hz)
 
         
-    if enable_plotting:
-        plot_time_psd_scat(subset_samples, radio_params.samplerate_hz, "Raw Received Samples")
-        plot_time_psd_scat(mixed_samples, radio_params.samplerate_hz, "Mixed Samples")
-        plot_time_psd_scat(filt_samples, radio_params.samplerate_hz, "Filtered Samples")
+    # if enable_plotting:
+    #     plot_time_psd_scat(subset_samples, radio_params.samplerate_hz, "Raw Received Samples")
+    #     plot_time_psd_scat(mixed_samples, radio_params.samplerate_hz, "Mixed Samples")
+    #     plot_time_psd_scat(filt_samples, radio_params.samplerate_hz, "Filtered Samples")
     
     for itag in range(tag_params.ntags):
         logger.info("Demodding tag %s", itag)
@@ -276,122 +326,272 @@ def demodulate_packet(input_samples, tag_params, radio_params, enable_plotting=F
         
         #agc
         proc_samples = agc(proc_samples, 1/np.sqrt(2))
-        if enable_plotting:
-            plot_time_psd_scat(proc_samples, radio_params.samplerate_hz, "Filtered & AGCed Samples")
-
+        # if enable_plotting:
+        #     plot_time_psd_scat(proc_samples, radio_params.samplerate_hz, "Filtered & AGCed Samples")
+        
         #correlation to find if signal is present and, if so, what the offset freq is
-        max_freq_dev_hz = 2000
-        max_output_freq_dev_hz = 100
+        max_freq_dev_hz = 50
+        max_output_freq_dev_hz = 50
         npts_freq_search = int(np.ceil(max_freq_dev_hz *2/max_output_freq_dev_hz)+1)
-        proc_samples = time_freq_code_search(proc_samples, itagParams.goldcode, itagParams.sps, radio_params.samplerate_hz, max_freq_dev_hz, npts_freq_search, enable_plotting)
+        resampled_gc = np.repeat(itagParams.goldcode.astype(np.complex64) , itagParams.sps)
+        proc_samples = time_freq_code_search(proc_samples, resampled_gc, itagParams.sps, radio_params.samplerate_hz, max_freq_dev_hz, npts_freq_search, enable_plotting)
 
-    #     #despread
-    #     bits_to_calc = len(itagParams.all_bits)
-    #     logger.debug("Expected number of bits: %s", bits_to_calc)
-    #     samps_per_bit = itagParams.sps*len(itagParams.goldcode)
-    #     despread_samples_repeat = np.zeros(samps_per_bit*bits_to_calc).astype(np.complex64)
         
-    #     for bit in range(bits_to_calc):
-    #         despread_samples_repeat[bit*samps_per_bit:(bit+1)*samps_per_bit] = proc_samples[bit*samps_per_bit:(bit+1)*samps_per_bit]*np.repeat(itagParams.goldcode.astype(np.complex64),itagParams.sps)
+        # preamble_samples = []
+        # for i in range(16*4):
+        #     bit = itagParams.preamble_bits[i]
+        #     # bit = itagParams.sync_bits[i]
+        # # for bit in itagParams.preamble_bits:
+        #     # Modulate bit with goldcode (bit*2-1 converts 0/1 to -1/+1)
+        #     modulated_gc = itagParams.goldcode.astype(np.complex64) * (bit*2-1)
+        #     # Repeat each symbol by sps factor
+        #     preamble_samples.extend(np.repeat(modulated_gc, itagParams.sps))
+        # # preamble_gc = np.array(preamble_samples)
+        # # proc_samples = time_freq_code_search(proc_samples, itagParams.goldcode, itagParams.sps, radio_params.samplerate_hz, max_freq_dev_hz, npts_freq_search, enable_plotting)
+        # # proc_samples = time_freq_code_search(proc_samples, preamble_samples, itagParams.sps, radio_params.samplerate_hz, max_freq_dev_hz, npts_freq_search, enable_plotting)
 
-    #     if enable_plotting:
-    #         plot_time_psd_scat(despread_samples_repeat, radio_params.samplerate_hz, "Despread Samples w/ Repeat")
-        
-    #     despread_samples_interp = np.zeros(samps_per_bit*bits_to_calc).astype(np.complex64)
-        
-    #     for bit in range(bits_to_calc):
-    #         despread_samples_interp[bit*samps_per_bit:(bit+1)*samps_per_bit] = proc_samples[bit*samps_per_bit:(bit+1)*samps_per_bit]*signal.resample_poly(itagParams.goldcode.astype(np.complex64),itagParams.sps,1)
-
-    #     if enable_plotting:
-    #         plot_time_psd_scat(despread_samples_interp, radio_params.samplerate_hz, "Despread Samples w/ Interp")
-
-
-    #     #mm time recovery
-    #     proc_samples = mm_time_recovery(despread_samples_repeat, itagParams.sps)
-        
-    #     #coarse f correct
-    #     # proc_samples = course_f_correct(proc_samples, radio_params.samplerate_hz)
-    #     # plt.figure()
-    #     # plt.plot(proc_samples)
-    #     # plt.title("After course f correct")
-    #     # plt.grid("on")
-        
-    #     #costas loop
-    #     proc_samples = costas_loop(proc_samples, radio_params.samplerate_hz)
-    #     # plt.figure()
-    #     # plt.plot(proc_samples)
-    #     # plt.title("After Costas Loop")
-    #     # plt.grid("on")
-        
-    #     #bpsk demod
-    #     rx_bits_raw = demod_bpsk(proc_samples)
-    #     # logger.info("Raw received bits: %s",rx_bits_raw.tolist())
-    #     # plt.figure()
-    #     # plt.plot(rx_bits_raw)
-    #     # plt.title("rx_bits_raw")
-    #     # plt.grid("on")
-        
-    #     logger.debug("rx_bits_raw: %s", rx_bits_raw)
-        
-    #     #average over cdma symbol - create array filled with NaNs
-    #     nbits_data = len(itagParams.actual_bits)
-    #     proc_bits = np.full(nbits_data, np.nan)
-        
-    #     # Bit decision logic: majority voting over gc_len chunks 
-    #     for i in range(nbits_data):
-    #         start_idx = i * gc_len
-    #         end_idx = (i + 1) * gc_len-1
-    #         if end_idx <= len(rx_bits_raw):
-    #             chunk = rx_bits_raw[start_idx:end_idx]
-    #             # Count 1s and 0s in the chunk
-    #             ones_count = np.sum(chunk)
-    #             zeros_count = len(chunk) - ones_count
-    #             # Decide based on majority
-    #             proc_bits[i] = 1 if ones_count > zeros_count else 0
-                
-    #     # logger.info("proc_bits:%s",proc_bits)
-    #     corrected_proc_bits, payload_bits = sync_word_search_correction(proc_bits, sync_seq, bitsPerPacket)
-        
-    #     # rx_bits_payload, sync_word_corr = sync_word_sync(rx_bits_raw*2-1, tag_params.sync_bits*2-1, len(tag_params.payload_bits), samps_per_bit)
-    #     # logger.info("Sync word correlation: %s", sync_word_corr)
-   
-    #     logger.info("Transmitted actual bits:  %s", itagParams.actual_bits)
-    #     logger.info("Raw processed bits:       %s", proc_bits.astype(int)) 
-    #     logger.info("Corrected processed bits: %s", corrected_proc_bits.astype(int)) 
-        
-    #     logger.info("Transmitted payload bits:  %s", itagParams.payload_bits)
-    #     logger.info("Received payload bits:     %s", payload_bits.astype(int))
-        
-        
-        
-    #     # num_bits = len(itagParams.actual_bits)
-    #     # num_errors = sum(abs(corrected_proc_bits-itagParams.actual_bits))
-    #     try:
-    #         num_bits = len(itagParams.payload_bits)
-    #         num_errors = sum(abs(payload_bits-itagParams.payload_bits))
-    #         BER = num_errors/num_bits
-    #     except:
-    #         logger.warning("BER unable to be computed")
-    #         num_bits = len(itagParams.payload_bits)
-    #         num_errors = num_bits
-    #         BER = 1.0
-        
-    #     logger.info("BER (tag %s): %s", itag, BER) 
-        
-    #     # Store results for this tag
-    #     if itag == 0:
-    #         results = {}
-    #     results[itag] = {
-    #         'num_errors': num_errors,
-    #         'num_bits': num_bits,
-    #         'ber': BER
-    #     }
+        # correlation = np.correlate(proc_samples, preamble_samples, mode='valid')
     
-    results = {}
-    results[0]  = {
-            'num_errors': 96,
-            'num_bits': 96,
-            'ber': 1
+        # plt.figure()
+        # plt.plot(abs(correlation))
+        # plt.grid("on")
+        # plt.title("Correlation with preamble before resampling")
+
+        # #correlation to find if signal is present and, if so, what the offset freq is
+        # max_freq_dev_hz = 700
+        # max_output_freq_dev_hz = 50
+        # npts_freq_search = int(np.ceil(max_freq_dev_hz *2/max_output_freq_dev_hz)+1)
+        # # Recreate preamble samples by modulating preamble bits with goldcode and repeating by sps
+        # preamble_samples = []
+        # for i in range(1):
+        #     bit = itagParams.preamble_bits[i]
+        #     # bit = itagParams.sync_bits[i]
+        # # for bit in itagParams.preamble_bits:
+        #     # Modulate bit with goldcode (bit*2-1 converts 0/1 to -1/+1)
+        #     modulated_gc = itagParams.goldcode.astype(np.complex64) * (bit*2-1)
+        #     # Repeat each symbol by sps factor
+        #     preamble_samples.extend(np.repeat(modulated_gc, itagParams.sps))
+        # # preamble_gc = np.array(preamble_samples)
+        # # proc_samples = time_freq_code_search(proc_samples, itagParams.goldcode, itagParams.sps, radio_params.samplerate_hz, max_freq_dev_hz, npts_freq_search, enable_plotting)
+        # # proc_samples = time_freq_code_search(proc_samples, preamble_samples, itagParams.sps, radio_params.samplerate_hz, max_freq_dev_hz, npts_freq_search, enable_plotting)
+
+        # correlation = np.correlate(proc_samples, preamble_samples, mode='valid')
+
+        # threshold = 400 #approximately sps*gclen*0.5
+        # peaks, properties = signal.find_peaks(abs(correlation), height=threshold, prominence=threshold*0.3)
+        
+        # # Analyze all peaks with sufficient prominence
+        # if len(peaks) > 1:
+        #     # Compute differences between consecutive peak indexes
+        #     peak_diffs = np.diff(peaks)
+        #     avg_peak_diff = np.mean(peak_diffs)
+        #     expected_peak_diff = 1270  # Expected samples between peaks
+            
+        #     logger.info("Found %d peaks at indexes: %s", len(peaks), peaks.tolist())
+        #     logger.info("Peak differences: %s", peak_diffs.tolist())
+        #     logger.info("Average peak difference: %.2f samples", avg_peak_diff)
+        #     logger.info("Expected peak difference: %d samples", expected_peak_diff)
+        #     logger.info("Average peak difference: %.3f ms", avg_peak_diff/radio_params.samplerate_hz*1000)
+            
+        #     # Resample signal to correct timing
+        #     resample_ratio = expected_peak_diff / avg_peak_diff
+        #     logger.info("Resampling ratio: %.6f", resample_ratio)
+            
+        #     proc_samples = signal.resample_poly(proc_samples, int(resample_ratio*1000), 1000)
+        #     logger.info("Resampled signal length: %d samples", len(proc_samples))
+            
+        #     # Plot correlation and peaks
+        #     if enable_plotting:
+        #         plt.figure(figsize=(12, 6))
+        #         plt.subplot(2, 1, 1)
+        #         plt.plot(abs(correlation))
+        #         plt.plot(peaks, abs(correlation)[peaks], 'rx', markersize=10, label='Detected Peaks')
+        #         plt.axhline(y=threshold, color='r', linestyle='--', label=f'Threshold={threshold}')
+        #         plt.title('Correlation with Preamble Pattern')
+        #         plt.xlabel('Sample Index')
+        #         plt.ylabel('Correlation Magnitude')
+        #         plt.legend()
+        #         plt.grid(True)
+                
+        #         plt.subplot(2, 1, 2)
+        #         plt.plot(range(len(peak_diffs)), peak_diffs, 'bo-')
+        #         plt.axhline(y=avg_peak_diff, color='r', linestyle='--', label=f'Average={avg_peak_diff:.1f}')
+        #         plt.title('Peak Spacing')
+        #         plt.xlabel('Peak Pair Index')
+        #         plt.ylabel('Sample Difference')
+        #         plt.legend()
+        #         plt.grid(True)
+        #         plt.tight_layout()
+                
+        #     correlation = np.correlate(proc_samples, preamble_samples, mode='valid')
+        
+        #     plt.figure()
+        #     plt.plot(abs(correlation))
+        #     plt.grid("on")
+        #     plt.title("Correlation GC after resampling")
+                
+        #     preamble_samples = []
+        #     for i in range(16*4):
+        #         bit = itagParams.preamble_bits[i]
+        #         # bit = itagParams.sync_bits[i]
+        #     # for bit in itagParams.preamble_bits:
+        #         # Modulate bit with goldcode (bit*2-1 converts 0/1 to -1/+1)
+        #         modulated_gc = itagParams.goldcode.astype(np.complex64) * (bit*2-1)
+        #         # Repeat each symbol by sps factor
+        #         preamble_samples.extend(np.repeat(modulated_gc, itagParams.sps))
+        #     # preamble_gc = np.array(preamble_samples)
+        #     # proc_samples = time_freq_code_search(proc_samples, itagParams.goldcode, itagParams.sps, radio_params.samplerate_hz, max_freq_dev_hz, npts_freq_search, enable_plotting)
+        #     # proc_samples = time_freq_code_search(proc_samples, preamble_samples, itagParams.sps, radio_params.samplerate_hz, max_freq_dev_hz, npts_freq_search, enable_plotting)
+
+        #     correlation = np.correlate(proc_samples, preamble_samples, mode='valid')
+        
+        #     plt.figure()
+        #     plt.plot(abs(correlation))
+        #     plt.grid("on")
+        #     plt.title("Correlation with preamble after resampling")
+        # # Get the first peak above threshold
+        # if len(peaks) > 0:
+        #     first_peak_index = peaks[0]
+        #     first_peak_value = correlation[first_peak_index]
+        #     first_peak_time_sec = first_peak_index/radio_params.samplerate_hz
+        #     first_peak_sign = np.sign(np.real(first_peak_value))
+            
+        #     logger.info("First peak-> index: %s, value: %s, time: %.4f s, sign: %s", 
+        #                first_peak_index, first_peak_value, first_peak_time_sec, first_peak_sign)
+        # else:
+        #     logger.warning("No peaks found above threshold!")  
+        
+              
+
+        logger.info("test")
+
+        # despread
+        # bits_to_calc = len(itagParams.actual_bits)
+        bits_to_calc = len(itagParams.actual_bits)+4
+        logger.debug("Expected number of bits: %s", bits_to_calc)
+        samps_per_bit = itagParams.sps*len(itagParams.goldcode)
+        despread_samples_repeat = np.zeros(samps_per_bit*bits_to_calc).astype(np.complex64)
+        
+        logger.info("test2")
+        
+        for bit in range(bits_to_calc):
+            despread_samples_repeat[bit*samps_per_bit:(bit+1)*samps_per_bit] = proc_samples[bit*samps_per_bit:(bit+1)*samps_per_bit]*np.repeat(itagParams.goldcode.astype(np.complex64),itagParams.sps)
+
+        if enable_plotting:
+            plot_time_psd_scat(despread_samples_repeat, radio_params.samplerate_hz, "Despread Samples w/ Repeat")
+        
+        despread_samples_interp = np.zeros(samps_per_bit*bits_to_calc).astype(np.complex64)
+        
+        for bit in range(bits_to_calc):
+            despread_samples_interp[bit*samps_per_bit:(bit+1)*samps_per_bit] = proc_samples[bit*samps_per_bit:(bit+1)*samps_per_bit]*signal.resample_poly(itagParams.goldcode.astype(np.complex64),itagParams.sps,1)
+
+        if enable_plotting:
+            plot_time_psd_scat(despread_samples_interp, radio_params.samplerate_hz, "Despread Samples w/ Interp")
+
+        logger.info("test3")
+
+        #mm time recovery
+        proc_samples = mm_time_recovery(despread_samples_repeat, itagParams.sps)
+        if enable_plotting:
+            plot_time_psd_scat(proc_samples, radio_params.samplerate_hz, "MM Timing recovery")
+        
+        logger.info("test4")
+        
+        # coarse f correct
+        proc_samples = course_f_correct(proc_samples, radio_params.samplerate_hz)
+        plt.figure()
+        plt.plot(proc_samples)
+        plt.title("After course f correct")
+        plt.grid("on")
+        
+        logger.info("test5")
+        
+        #costas loop
+        proc_samples = costas_loop(proc_samples, radio_params.samplerate_hz)
+        if enable_plotting:
+            plot_time_psd_scat(proc_samples, radio_params.samplerate_hz, "Costas loop")
+        # plt.figure()
+        # plt.plot(proc_samples)
+        # plt.title("After Costas Loop")
+        # plt.grid("on")
+        
+        logger.info("test6")
+        
+        #bpsk demod
+        rx_bits_raw = demod_bpsk(proc_samples)
+        if enable_plotting:
+            plot_time_psd_scat(proc_samples, radio_params.samplerate_hz, "Raw demodded bits")
+        # logger.info("Raw received bits: %s",rx_bits_raw.tolist())
+        # plt.figure()
+        # plt.plot(rx_bits_raw)
+        # plt.title("rx_bits_raw")
+        # plt.grid("on")
+        
+        logger.debug("rx_bits_raw: %s", rx_bits_raw)
+        
+        #average over cdma symbol - create array filled with NaNs
+        nbits_data = len(itagParams.actual_bits)
+        proc_bits = np.full(nbits_data, np.nan)
+        
+        # Bit decision logic: majority voting over gc_len chunks 
+        for i in range(nbits_data):
+            start_idx = i * gc_len
+            end_idx = (i + 1) * gc_len-1
+            if end_idx <= len(rx_bits_raw):
+                chunk = rx_bits_raw[start_idx:end_idx]
+                # Count 1s and 0s in the chunk
+                ones_count = np.sum(chunk)
+                zeros_count = len(chunk) - ones_count
+                # Decide based on majority
+                proc_bits[i] = 1 if ones_count > zeros_count else 0
+        
+        valid_bits = proc_bits[~np.isnan(proc_bits)]
+                
+        # logger.info("proc_bits:%s",proc_bits)
+        corrected_proc_bits, payload_bits = sync_word_search_correction(valid_bits, sync_seq, bitsPerPacket)
+        
+        # rx_bits_payload, sync_word_corr = sync_word_sync(rx_bits_raw*2-1, tag_params.sync_bits*2-1, len(tag_params.payload_bits), samps_per_bit)
+        # logger.info("Sync word correlation: %s", sync_word_corr)
+   
+        logger.info("Transmitted actual bits:  %s", itagParams.actual_bits)
+        
+        
+        logger.info("Raw processed bits:       %s", valid_bits.astype(int)) 
+        logger.info("Corrected processed bits: %s", corrected_proc_bits.astype(int)) 
+        
+        logger.info("Transmitted payload bits:  %s", itagParams.payload_bits)
+        logger.info("Received payload bits:     %s", payload_bits.astype(int))
+        
+        
+        
+        # num_bits = len(itagParams.actual_bits)
+        # num_errors = sum(abs(corrected_proc_bits-itagParams.actual_bits))
+        try:
+            num_bits = len(itagParams.payload_bits)
+            num_errors = sum(abs(payload_bits-itagParams.payload_bits))
+            BER = num_errors/num_bits
+        except:
+            logger.warning("BER unable to be computed")
+            num_bits = len(itagParams.payload_bits)
+            num_errors = num_bits
+            BER = 1.0
+        
+        logger.info("BER (tag %s): %s", itag, BER) 
+        
+        # Store results for this tag
+        if itag == 0:
+            results = {}
+        results[itag] = {
+            'num_errors': num_errors,
+            'num_bits': num_bits,
+            'ber': BER
         }
+    
+    # results = {}
+    # results[0]  = {
+    #         'num_errors': 96,
+    #         'num_bits': 96,
+    #         'ber': 1
+    #     }
     
     return results
