@@ -101,10 +101,10 @@ def get_simulated_samples(n_tags: int, radio_params: IoTBSConst.RadioSettings, s
 def get_file_samples(path):
     logger.info(f"Reading samples from file: {path}")
     import os
-    
-    # If path is just a filename, look in src/samples directory
+
+    # If path is just a filename, look in src/cloud_samples directory
     if not os.path.isabs(path) and not os.path.dirname(path):
-        samples_dir = os.path.join(os.path.dirname(__file__), 'samples')
+        samples_dir = os.path.join(os.path.dirname(__file__), 'cloud_samples')
         full_path = os.path.join(samples_dir, path)
     else:
         full_path = path
