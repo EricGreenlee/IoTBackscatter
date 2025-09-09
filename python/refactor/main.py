@@ -162,7 +162,7 @@ def main():
         
         packet_bits, bit_errors, bits_sent = demod_samples.demodulate_packet(samples, tag_params, radio_settings, demod_settings, enable_plotting=args.plot)
         # demod_results = demod.demodulate_packet(samples, tag_params, radio_params, plotting_level, demod_settings)
-        logger.debug(f"Demodulated bits: {packet_bits}")
+        logger.debug(f"Demodulated bits:\n {packet_bits}")
         
         tot_bits_error += bit_errors
         tot_bits_sent += bits_sent

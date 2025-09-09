@@ -4,7 +4,6 @@ from scipy import signal
 
 from main import logger
 
-
 def plot_time_psd_scat(samples, samp_rate, title):
     plt.figure()
     
@@ -37,6 +36,34 @@ def agc(samples,out_amplitude):
     gain = out_amplitude/np.sqrt(mag)
     samples_out = samples*gain
     return(samples_out) 
+
+def coarse_freq_correction(input_samples, target_corr_samples, fs_hz, max_freq_dev_hz, nfreq_pts, enable_plotting=False):
+    """
+    Coarse frequency correction using Gold code correlation
+    """
+    freq_offsets_hz = np.linspace(-max_freq_dev_hz, max_freq_dev_hz, nfreq_pts)
+    logger.debug("Test frequency offsets: %s", freq_offsets_hz)
+    
+    time_delays_sec = np.linspace(0, (len(input_samples)-1)/fs_hz, len(input_samples))
+    corr_len = len(input_samples)-len(target_corr_samples)+1
+    
+    # Create meshgrid for time delay and frequency offset
+    Z = np.zeros((len(freq_offsets_hz), corr_len))
+    
+    for j, freq_offset_hz in enumerate(freq_offsets_hz):
+        test_samples = input_samples * np.exp(+1j*2*np.pi*freq_offset_hz*time_delays_sec)
+        correlation = np.correlate(test_samples, target_corr_samples, mode='valid')
+        Z[j, :] = np.abs(correlation)
+    
+    max_corr_idx = np.unravel_index(np.argmax(Z), Z.shape)
+    freq_adj_hz = freq_offsets_hz[max_corr_idx[0]]
+    
+    logger.info(f"Coarse freq correction: {freq_adj_hz} Hz")
+    
+    # Apply frequency correction
+    output_samples = input_samples * np.exp(1j*2*np.pi*freq_adj_hz*time_delays_sec)
+    
+    return output_samples, freq_adj_hz
 
 def time_freq_code_search(input_samples, target_corr_samples, input_sps, fs_hz, max_freq_dev_hz, nfreq_pts : int, enable_plotting=False):
     #must get the frequency to within ~150 Hz for the costas loop to be able to correct it
@@ -307,21 +334,21 @@ def mm_time_recovery(samples, samps_per_symbol):
     
     return(out)
 
-# course frequency correction handled in time_freq_code search
-def course_f_correct(samples, samp_rate):
-    samples_sqr = samples**2
-    psd_sq = np.fft.fftshift(np.abs(np.fft.fft(samples_sqr)))
-    f = np.linspace(-samp_rate/2.0, samp_rate/2.0, len(psd_sq))
-    max_freq = f[np.argmax(psd_sq)]
-    Ts = 1/samp_rate # calc sample period
-    # t = np.arange(0, Ts*len(samples), Ts) # create time vector
-    t = np.linspace(0,(len(samples)-1)/samp_rate, len(samples))
-    logger.info("test 11")
-    samples = samples * np.exp(-1j*2*np.pi*max_freq*t/2.0)
+# # course frequency correction handled in time_freq_code search
+# def course_f_correct(samples, samp_rate):
+#     samples_sqr = samples**2
+#     psd_sq = np.fft.fftshift(np.abs(np.fft.fft(samples_sqr)))
+#     f = np.linspace(-samp_rate/2.0, samp_rate/2.0, len(psd_sq))
+#     max_freq = f[np.argmax(psd_sq)]
+#     Ts = 1/samp_rate # calc sample period
+#     # t = np.arange(0, Ts*len(samples), Ts) # create time vector
+#     t = np.linspace(0,(len(samples)-1)/samp_rate, len(samples))
+#     logger.info("test 11")
+#     samples = samples * np.exp(-1j*2*np.pi*max_freq*t/2.0)
     
-    logger.info("coarse freq offset: %s", max_freq)
+#     logger.info("coarse freq offset: %s", max_freq)
     
-    return(samples.astype(np.complex64) )
+#     return(samples.astype(np.complex64) )
 
 def costas_loop(samples, samp_rate):
     
@@ -402,8 +429,13 @@ def demodulate_packet(input_samples, tag_params, radio_params, demod_settings, e
     samplerate_hz = radio_params.get('samplerate_hz', {})
     target_sps = radio_params.get('target_sps', {})
     
+    itagParams = tag_params.get_tag(0)
     nbits_sent = np.zeros(tag_params.ntags)
     nbits_error = np.zeros(tag_params.ntags)
+    all_payloads = np.zeros((tag_params.ntags,16),dtype=np.uint8)
+    
+    # demod_info = parse_demod_settings(demod_settings)
+    # print(demod_info)
             
     start_ind = 127000+124000
     num_samps = 1270*100
@@ -516,9 +548,6 @@ def demodulate_packet(input_samples, tag_params, radio_params, demod_settings, e
                 
         # logger.info("proc_bits:%s",proc_bits)
         corrected_proc_bits, rx_payload_bits = sync_word_search_correction(valid_bits, itagParams.sync_bits, len(itagParams.payload_bits))
-        
-        # rx_bits_payload, sync_word_corr = sync_word_sync(rx_bits_raw*2-1, tag_params.sync_bits*2-1, len(tag_params.payload_bits), samps_per_bit)
-        # logger.info("Sync word correlation: %s", sync_word_corr)
    
         
         # # Stage 1: Coarse frequency correction using Gold code correlation
@@ -588,10 +617,11 @@ def demodulate_packet(input_samples, tag_params, radio_params, demod_settings, e
         logger.info("Transmitted payload bits:  %s", itagParams.payload_bits)
         logger.info("Received payload bits:     %s", rx_payload_bits.astype(int))
         
+        all_payloads[itag] = rx_payload_bits.astype(int)
+        
         nbits_sent[itag] = len(itagParams.payload_bits)
         try:
             nbits_error[itag] = sum(abs(itagParams.payload_bits-rx_payload_bits.astype(int)))
-            
         except:
             nbits_error[itag] =len(itagParams.payload_bits)
         
@@ -599,4 +629,4 @@ def demodulate_packet(input_samples, tag_params, radio_params, demod_settings, e
         logger.debug(f"BER: {BER}")
         
     # logger.info(f"nbits_error: {nbits_error}")
-    return rx_payload_bits.astype(int), nbits_error, nbits_sent
+    return all_payloads, nbits_error, nbits_sent
