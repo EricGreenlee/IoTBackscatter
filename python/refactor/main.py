@@ -68,7 +68,6 @@ def load_json_settings(fpath):
         sim_settings = config.get('sim_settings',{})
         demod_settings = config.get('demodulator_settings', {})
         
-            
     except Exception as e:
         logger.error(f"Error loading settings: {e}")
         raise 
@@ -91,6 +90,15 @@ def gen_tag_params(ntags):
         all_tag_params.add_tag(single_tag_param)
         
     return(all_tag_params)
+
+def print_bit_error_summary(tot_bits_error, tot_bits_sent, ntags):
+    logger.info("=== Bit Error Summary ===")
+    for tag_id in range(ntags):
+        if tot_bits_sent[tag_id] > 0:
+            ber = tot_bits_error[tag_id] / tot_bits_sent[tag_id]
+            logger.info(f"Tag {tag_id}: {int(tot_bits_error[tag_id])}/{int(tot_bits_sent[tag_id])} errors, BER: {ber:.4f}")
+        else:
+            logger.info(f"Tag {tag_id}: No bits sent")
 
 def generate_samples(source, fname, ntags, radio_settings, sim_settings):
     
@@ -141,6 +149,10 @@ def main():
     
     # Load settings from JSON configuration file
     radio_settings, demod_settings, sim_settings = load_json_settings("refactor/IoTBSSettings.json")
+    
+    #initialize data structure to keep track of results
+    tot_bits_error = np.zeros(args.n_tags)
+    tot_bits_sent = np.zeros(args.n_tags)
    
     # Run multiple iterations
     for iteration in range(args.iterations): 
@@ -148,13 +160,16 @@ def main():
         
         samples, tag_params  = generate_samples(args.source, args.file, args.n_tags, radio_settings, sim_settings)
         
-        plt.figure()
-        plt.plot(np.abs(samples))
-        
-        packet_bits, demod_results = demod_samples.demodulate_packet(samples, tag_params, radio_settings, demod_settings)
+        packet_bits, bit_errors, bits_sent = demod_samples.demodulate_packet(samples, tag_params, radio_settings, demod_settings, enable_plotting=args.plot)
         # demod_results = demod.demodulate_packet(samples, tag_params, radio_params, plotting_level, demod_settings)
+        logger.debug(f"Demodulated bits: {packet_bits}")
+        
+        tot_bits_error += bit_errors
+        tot_bits_sent += bits_sent
+        
     
     #display demod_results
+    print_bit_error_summary(tot_bits_error, tot_bits_sent, args.n_tags)
     
     if args.plot: 
         plot()

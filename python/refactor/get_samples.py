@@ -1,10 +1,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+
 from main import logger
 import IoTBSConst
 
-def gen_nonidealities(sim_settings):
-    ideal_sps = sim_settings.get('sps', {})
+def gen_nonidealities(sim_settings, ideal_sps):
+    # ideal_sps = radio_settings.get('sps', {})
     
     enable_nonideal = sim_settings.get('enable_nonideal', {})
     nonideal_vals = sim_settings.get('nonideal_vals', {})
@@ -62,14 +64,14 @@ def simulate_samples(ntags, tag_params, sim_settings, radio_settings):
     for id in range(ntags):
         cur_tag = tag_params.get_tag(id)
         
-        ideal_sps = sim_settings.get('sps', {})
+        target_sps = radio_settings.get('sps', {})
         carrier_freq_hz = radio_settings.get('carrier_freq_hz', {})
         samplerate_hz = radio_settings.get('samplerate_hz', {})
-        actual_sps, tx_pwr_dbm, noise_pwr_dbm, tag2modem_dist_m, freq_offset_hz, time_offset_sec = gen_nonidealities(sim_settings)
+        actual_sps, tx_pwr_dbm, noise_pwr_dbm, tag2modem_dist_m, freq_offset_hz, time_offset_sec = gen_nonidealities(sim_settings, target_sps)
         
         cur_sim_packet = IoTBSConst.SimPacket(
             tagParam = cur_tag,
-            ideal_sps = ideal_sps,
+            ideal_sps = target_sps,
             carrier_freq_hz = carrier_freq_hz,
             samplerate_hz = samplerate_hz,
             actual_sps = actual_sps,
@@ -89,9 +91,28 @@ def simulate_samples(ntags, tag_params, sim_settings, radio_settings):
         
     return sim_samples
 
-def file_samples(fname):
-    # logger.debug("Simulating samples in file")
-    return 0
+def file_samples(path):
+    logger.info(f"Reading samples from file: {path}")
+
+
+    # If path is just a filename, look in src/cloud_samples directory
+    if not os.path.isabs(path) and not os.path.dirname(path):
+        samples_dir = os.path.join(os.path.dirname(__file__), 'cloud_samples')
+        full_path = os.path.join(samples_dir, path)
+    else:
+        full_path = path
+    
+    try:
+        samples = np.load(full_path)
+        logger.info(f"Loaded {len(samples)} samples from {full_path}")
+        return samples
+    except FileNotFoundError:
+        logger.error(f"File not found: {full_path}")
+        raise
+    except Exception as e:
+        logger.error(f"Error loading samples from {full_path}: {e}")
+        raise
+
 
 def sdr_samples(radio_setting):
     # logger.debug("Simulating samples in file")
