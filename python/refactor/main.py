@@ -11,9 +11,7 @@ import demod_samples
 import get_samples
 import IoTBSConst
 
-# np.set_printoptions(linewidth=120, threshold=np.inf)
-
-
+#configure logging
 def configure_logging(verbosity_level: int): 
     """
     Configure logging programmatically for both console and file.
@@ -45,83 +43,6 @@ def configure_logging(verbosity_level: int):
     fh_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s", "%Y-%m-%d %H:%M:%S")
     fh.setFormatter(fh_formatter)
     logger.addHandler(fh)
-
-# ----------------------------
-# Sample functions (stubs)
-# ----------------------------
-# def get_simulated_samples(n_tags: int, radio_params: IoTBSConst.RadioSettings, seed: int):
-#     # logger.info("Generating simulated samples for %s tags with seed %s", n_tags, seed)
-    
-#     # # Set random seed for reproducible results
-    # np.random.seed(seed)
-
-    # # Hold all simulated packet parameters
-    # all_pp = IoTBSConst.TagParams()
-
-    # for tag in range(n_tags):
-    #     spp = IoTBSConst.SimulatedPacketParams( 
-    #         tag_id = tag,
-    #         preamble_bits = IoTBSConst.preamble,
-    #         # preamble_bits = np.array([1, 1, 1, 1, 1, 0, 1, 0]),
-    #         sync_bits = IoTBSConst.sync_seq,
-    #         # sync_bits = [],
-    #         # n_payload_bits = 100,
-    #         # payload_bits=np.array([1, 0, 1, 0, 1, 0, 0, 1]),
-    #         # payload_bits=np.random.randint(0,2,IoTBSConst.bitsPerPacket),
-    #         payload_bits = np.array([0,1,0,0,1,0,1,0,0,1,1,0,1,1,1,1]),
-    #         pad_bits=np.zeros(10),
-    #         sps=10,
-    #         # snr_db=40,#10.0,
-    #         tx_pwr_dbm=30.0,
-    #         noise_pwr_dbm=-100.0,
-    #         oneway_tag2modem_dist_m = 0.0, #1m with 30dB SNR seems to work
-    #         frequency_offset_hz=0,#np.random.uniform(-500,500),
-    #         # time_delay_sec=0.05,
-    #         time_delay_mode = "rand",
-    #         # time_delay_sec=np.random.uniform(0.001,0.25),
-    #         # total_duration_sec = 1,
-    #         samplerate_hz = radio_params.samplerate_hz
-    #     ) 
-    #     # spp.gen_ideal_samples()
-    #     spp.gen_nonideal_samples()
-        
-    #     all_pp.add_tag(spp)
-    
-    # # print(sp.summary())
-    # logger.debug("simulated packet metadata: %s", all_pp.summary())
-    # logger.info("simulated packet nonidealities: %s", all_pp.summary_nonideal()) 
-     
-    # sim_packet = all_pp.combined_samples()
-    
-    # # logger.info("done combining packet")
-    
-    # return sim_packet, all_pp
-
-# def get_file_samples(path):
-#     logger.info(f"Reading samples from file: {path}")
-#     import os
-
-#     # If path is just a filename, look in src/cloud_samples directory
-#     if not os.path.isabs(path) and not os.path.dirname(path):
-#         samples_dir = os.path.join(os.path.dirname(__file__), 'cloud_samples')
-#         full_path = os.path.join(samples_dir, path)
-#     else:
-#         full_path = path
-    
-#     try:
-#         samples = np.load(full_path)
-#         logger.info(f"Loaded {len(samples)} samples from {full_path}")
-#         return samples
-#     except FileNotFoundError:
-#         logger.error(f"File not found: {full_path}")
-#         raise
-#     except Exception as e:
-#         logger.error(f"Error loading samples from {full_path}: {e}")
-#         raise
-
-# def get_sdr_samples():
-#     logger.info("Streaming live samples from SDR hardware")
-#     return []  # TODO: implement 
 
 # Command line interace
 def parse_args():
@@ -175,12 +96,11 @@ def generate_samples(source, fname, ntags, radio_settings, sim_settings):
     
     tag_params = gen_tag_params(ntags)
     
-    logger.debug(tag_params.summary())
+    logger.debug(f"Tag summary: {tag_params.summary()}")
     
     if source == "sim":
         logger.debug("Simulating samples")
-        samples, seed = get_samples.simulate_samples(ntags, tag_params, sim_settings, radio_settings)
-        logger.debug(f"seed: {seed}")
+        samples = get_samples.simulate_samples(ntags, tag_params, sim_settings, radio_settings)
         
     elif source == "file":
         if not fname:
@@ -227,6 +147,9 @@ def main():
         logger.info("=== Starting iteration %d/%d ===", iteration + 1, args.iterations)
         
         samples, tag_params  = generate_samples(args.source, args.file, args.n_tags, radio_settings, sim_settings)
+        
+        plt.figure()
+        plt.plot(np.abs(samples))
         
         packet_bits, demod_results = demod_samples.demodulate_packet(samples, tag_params, radio_settings, demod_settings)
         # demod_results = demod.demodulate_packet(samples, tag_params, radio_params, plotting_level, demod_settings)

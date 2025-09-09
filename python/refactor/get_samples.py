@@ -41,6 +41,10 @@ def gen_nonidealities(sim_settings):
     return sps, tx_pwr_dbm, noise_pwr_dbm, tag2modem_dist_m, freq_offset_hz, time_delay_sec
 
 def simulate_samples(ntags, tag_params, sim_settings, radio_settings):
+    seed = np.random.randint(0,100000)
+    np.random.seed(seed)
+    logger.debug(f"Generating simulated samples with seed {seed}")
+    
     cur_tag = tag_params.get_tag(0)
     
     packet_num_samples = len(cur_tag.goldcode)*len(cur_tag.all_bits)*sim_settings.get('sps',{})
@@ -58,12 +62,17 @@ def simulate_samples(ntags, tag_params, sim_settings, radio_settings):
     for id in range(ntags):
         cur_tag = tag_params.get_tag(id)
         
-        sps, tx_pwr_dbm, noise_pwr_dbm, tag2modem_dist_m, freq_offset_hz, time_offset_sec = gen_nonidealities(sim_settings)
-        # sps = gen_nonidealities(sim_settings)
-
+        ideal_sps = sim_settings.get('sps', {})
+        carrier_freq_hz = radio_settings.get('carrier_freq_hz', {})
+        samplerate_hz = radio_settings.get('samplerate_hz', {})
+        actual_sps, tx_pwr_dbm, noise_pwr_dbm, tag2modem_dist_m, freq_offset_hz, time_offset_sec = gen_nonidealities(sim_settings)
+        
         cur_sim_packet = IoTBSConst.SimPacket(
             tagParam = cur_tag,
-            sps = sps,
+            ideal_sps = ideal_sps,
+            carrier_freq_hz = carrier_freq_hz,
+            samplerate_hz = samplerate_hz,
+            actual_sps = actual_sps,
             tx_pwr_dbm = tx_pwr_dbm,
             noise_pwr_dbm = noise_pwr_dbm,
             tag2modem_dist_m = tag2modem_dist_m,
@@ -78,7 +87,7 @@ def simulate_samples(ntags, tag_params, sim_settings, radio_settings):
         
     logger.debug(f"Simulated packet metadata: {all_sim_packets.summary()}")
         
-    return sim_samples, 1
+    return sim_samples
 
 def file_samples(fname):
     # logger.debug("Simulating samples in file")

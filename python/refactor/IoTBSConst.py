@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 import numpy as np
+from scipy import signal
 
  #Preamble and sync words
 # preamble = np.array([1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0])
@@ -65,14 +66,17 @@ class AllTagParams:
         sum_str = ""
         for tag in range(self.ntags):
             cur_tag = self.tagParams[tag]
-            sum_str = sum_str + f"\nid = {cur_tag.id}\tbits={cur_tag.all_bits}"
+            sum_str = sum_str + f"\nid = {cur_tag.id}\n\tbits={cur_tag.all_bits}\n\tgoldcode={cur_tag.goldcode}"
         
         return sum_str
     
 @dataclass
 class SimPacket:
     tagParam: TagParam
-    sps: float
+    ideal_sps: int
+    carrier_freq_hz: int
+    samplerate_hz: int
+    actual_sps: float
     tx_pwr_dbm: float
     noise_pwr_dbm: float
     tag2modem_dist_m: float
@@ -80,22 +84,78 @@ class SimPacket:
     time_offset_sec: float
     
     #derived values
-    samples: Optional[List[float]] = field(default=None)  # computed later
+    samples: Optional[np.complex64] = field(default=None)  # computed later
     
-    def gen_ideal_samples(self):
-        self.samples = np.zeros(1).astype(np.complex64)
+    def gen_ideal_samples(self, tot_num_samples):
+        self.samples = np.zeros(tot_num_samples).astype(np.complex64)
+        sps = self.ideal_sps
+        gc = self.tagParam.goldcode
+        gc_len = len(gc)
+        for i, bit in enumerate(self.tagParam.all_bits):
+            self.samples[i*sps*gc_len:(i+1)*sps*gc_len] = np.repeat(gc.astype(np.complex64)*(bit*2-1),sps)
         
     def gen_nonideal_samples(self, tot_num_samples):
-        self.gen_ideal_samples()
+        self.gen_ideal_samples(tot_num_samples)
         
-        temp_samples = np.zeros(tot_num_samples).astype(np.complex64)
-        temp_samples[0] = self.samples
+        amplitude_mw = 10**(self.tx_pwr_dbm/10)
+        self.samples = amplitude_mw * self.samples
         
-        self.samples = temp_samples
+        print(f"carrier_freq_hz: {self.carrier_freq_hz}")
+        print(f"self.tag2modem_dist_m: {self.tag2modem_dist_m}")
+        
+        # Distance-based attenuation (free space path loss)
+        if self.tag2modem_dist_m > 0:
+            # Free space path loss: PL(dB) = 20*log10(4π*d*f/c)   
+            c = 3e8  # speed of light
+            oneway_path_loss_db = 20 * np.log10(4 * np.pi * self.tag2modem_dist_m * self.carrier_freq_hz / c)
+            roundtrip_path_loss_db = 2 * oneway_path_loss_db
+            attenuation_linear = 10**(-roundtrip_path_loss_db/10)
+            self.samples = self.samples * attenuation_linear
+        
+        # Time delay - integer and fractional parts
+        total_delay_samples = self.time_offset_sec * self.samplerate_hz
+        self.integer_delay_samples = int(total_delay_samples)
+        self.fractional_delay_samples = total_delay_samples - self.integer_delay_samples
+        
+        # Integer delay using np.roll
+        self.samples = np.roll(self.samples, self.integer_delay_samples)
+        
+        # Fractional delay using interpolation
+        if self.fractional_delay_samples != 0:
+            delay_filter_length = 41  # odd number for symmetric filter
+            n = np.arange(-delay_filter_length//2, delay_filter_length//2) # ...-3,-2,-1,0,1,2,3...
+            h = np.sinc(n - self.fractional_delay_samples) # calc filter taps
+            h *= np.hamming(delay_filter_length) # window the filter to make sure it decays to 0 on both sides
+            h /= np.sum(h) # normalize to get unity gain, we don't want to change the amplitude/power
+            # out_samples = np.convolve(samples, h) # apply filter
+            self.samples = signal.convolve(self.samples, h, mode='same')
+        
+        #frequency drift
+        time_sec = np.linspace(0, (tot_num_samples-1)/self.samplerate_hz,tot_num_samples)
+        self.samples = self.samples*np.exp(1j*2*np.pi*self.freq_offset_hz*time_sec)
+        
+        #resample
+        resamp_ratio = self.actual_sps/self.ideal_sps
+        resamp_samples = signal.resample_poly(self.samples, int(resamp_ratio*1000), 1000)
+        if len(resamp_samples) > len(self.samples):
+            self.samples = resamp_samples[0:len(self.samples)]
+        else:
+            self.samples = np.concatenate([resamp_samples, np.zeros(len(self.samples)-len(resamp_samples)).astype(np.complex64)])
+        
+        #add background noise
+        noise_pwr_raw = 10**(self.noise_pwr_dbm/10)
+        self.samples = self.samples + np.random.normal(0,noise_pwr_raw, self.samples.shape)+1j*np.random.normal(0,noise_pwr_raw, self.samples.shape)
+        
+        
+        
+        # temp_samples = np.zeros(tot_num_samples).astype(np.complex64)
+        # temp_samples[] = self.samples
+        
+        # self.samples = temp_samples
     
     def summary(self):
         return str(f"id: {self.tagParam.id}, "\
-            f"sps: {self.sps}, "\
+            f"actual_sps: {self.actual_sps}, "\
             f"tx_pwr_dbm: {self.tx_pwr_dbm}, "\
             f"noise_pwr_dbm: {self.noise_pwr_dbm}, "\
             f"tag2modem_dist_m: {self.tag2modem_dist_m}, "\
