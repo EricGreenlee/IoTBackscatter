@@ -11,5 +11,6 @@
     },
     // Show linting feedback in Problems panel + inline
     "python.analysis.diagnosticMode": "workspace",
-    "python.analysis.typeCheckingMode": "basic"
+    "python.analysis.typeCheckingMode": "basic",
+    "python-envs.pythonProjects": []
 }

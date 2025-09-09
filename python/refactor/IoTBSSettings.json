@@ -1,0 +1,57 @@
+{
+  "radio_settings": {
+    "samplerate_hz": 250000,
+    "carrier_freq_hz": 915000000
+  },
+  "sim_settings": {
+    "sps": 10,
+    "duration_ratio": 5,
+    "enable_nonideal": {
+      "sps": true,
+      "noise": true,
+      "attenuation": true,
+      "frequency": true,
+      "time": true
+    },
+    "nonideal_vals": {
+      "sps_ratio": 0.1,
+      "tx_pwr_dbm": 30.0,
+      "noise_pwr_dbm": -100.0,
+      "tag2modem_dist_m": 10,
+      "max_freq_offset_hz": 500,
+      "max_time_delay_sec": 1
+    }
+  },
+  "demodulator_settings": {
+    "output_file": null,
+    "start_index": 251000,
+    "num_samples": 127000,
+    "mixing": {
+      "bypass": false,
+      "center_freq_hz": -50000,
+      "freq_offset_hz": 505
+    },
+    "filtering": {
+      "bypass": false,
+      "filter_cutoff_hz": 25000,
+      "filter_order": 5
+    },
+    "agc": {
+      "bypass": false,
+      "agc_target_amplitude": 0.7071
+    },
+    "code_search": {
+      "bypass": false,
+      "manual_mode": {
+        "freq": true,
+        "resamp": true,
+        "time": true
+      },
+      "manual_params": {
+        "frequency_offset_hz": 0,
+        "resampling_ratio": 0.999,
+        "time_offset_samples": 0
+      }
+    }
+  }
+}

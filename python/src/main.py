@@ -3,7 +3,7 @@ import argparse
 import logging
 import sys
 
-import demod
+import demod_2
 import IoTBSConst
 import matplotlib.pyplot as plt
 import numpy as np
@@ -74,9 +74,9 @@ def get_simulated_samples(n_tags: int, radio_params: IoTBSConst.RadioSettings, s
             sps=10,
             # snr_db=40,#10.0,
             tx_pwr_dbm=30.0,
-            noise_pwr_dbm=0.0,
+            noise_pwr_dbm=-100.0,
             oneway_tag2modem_dist_m = 0.0, #1m with 30dB SNR seems to work
-            frequency_offset_hz=np.random.uniform(-500,500),
+            frequency_offset_hz=0,#np.random.uniform(-500,500),
             # time_delay_sec=0.05,
             time_delay_mode = "rand",
             # time_delay_sec=np.random.uniform(0.001,0.25),
@@ -180,7 +180,7 @@ def main():
             sys.exit(1)
 
         # logger.debug("Packet to demod: %s", samples)
-        iteration_results = demod.demodulate_packet(samples, tag_params, radio_params, enable_plotting=args.plot)
+        iteration_results = demod_2.demodulate_packet(samples, tag_params, radio_params, enable_plotting=args.plot)
         all_results.append(iteration_results)
         
         # Accumulate totals for each tag

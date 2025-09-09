@@ -179,6 +179,170 @@ def time_freq_code_search(input_samples, target_corr_samples, input_sps, fs_hz, 
     
     
     return output_samples
+
+
+def time_code_resamp_search(input_samples, target_corr_samples, input_sps, fs_hz, max_freq_dev_hz, nfreq_pts : int, enable_plotting=False):
+    
+    proc_samples = input_samples
+    
+    #must get the frequency to within ~150 Hz for the costas loop to be able to correct it
+    
+    # freq_offsets_hz = np.linspace(-1*max_freq_dev_hz, max_freq_dev_hz, nfreq_pts)#[-100,-50,0,50,100]
+    # logger.debug("Test frequency offsets: %s", freq_offsets_hz)
+    # # freq_offsets_hz = [0]
+    # time_delays_sec = np.linspace(0, (len(input_samples)-1)/fs_hz, len(input_samples))
+    
+    # # target_gc_stretch = np.repeat(target_gc,input_sps)
+    
+    # # logger.info(f"len(samples): {len(samples)}, len(target_gc_stretch): {len(target_gc_stretch)}, dif: {len(samples)-len(target_gc_stretch)}")
+    # corr_len = len(input_samples)-len(target_corr_samples)+1
+    # # logger.info(f"corr_len: {corr_len}")
+    
+    # # Create meshgrid for time delay and frequency offset
+    # X, Y = np.meshgrid(time_delays_sec[0:corr_len], freq_offsets_hz)
+    # Z = np.zeros((len(freq_offsets_hz), corr_len))
+    
+    # for j, freq_offset_hz in enumerate(freq_offsets_hz):
+    #     # logger.info(f"Loop {j}, freq_offset_hz: {freq_offset_hz}")
+    #     test_samples = input_samples * np.exp(+1j*2*np.pi*freq_offset_hz*time_delays_sec)
+        
+    #     correlation = np.correlate(test_samples, target_corr_samples, mode='valid')
+    #     Z[j, :] = np.abs(correlation)
+    
+    #     if enable_plotting:
+    #         plt.figure()
+    #         plt.plot(abs(correlation))
+    #         plt.grid("on")
+    #         plt.title(f"Correlation with Repeated Goldcode, freq_offset_hz: {freq_offset_hz}")
+    
+    # if enable_plotting:
+    #     fig_lab = plt.figure()
+    #     ax = fig_lab.add_subplot(111, projection='3d')
+    #     ax.plot_surface(X, Y, Z[:,:], cmap='viridis')
+    #     ax.set_title(f'Correlation with Repeated Goldcode')
+
+    #     # Set labels
+    #     ax.set_xlabel('Time Delay (s)')
+    #     ax.set_ylabel('Frequency Offset (Hz)')
+    #     ax.set_zlabel('Signal Strength')
+    
+    # max_corr = np.max(Z)
+    # max_corr_idx = np.argmax(Z)
+    # max_corr_idx = np.unravel_index(max_corr_idx, Z.shape)
+    # freq_adj_hz = freq_offsets_hz[max_corr_idx[0]]
+
+    # logger.info(f"max_corr: {max_corr}")
+    # logger.info(f"freq index of max correlation: {max_corr_idx[0]}, corresponding freq_adj_hz: {freq_adj_hz}")
+    # # logger.info(f"time index of max correlation: {max_corr_idx[1]}")
+    
+    # logger.info("freq_offsets_hz: %s", freq_offsets_hz)
+    # # logger.info("time_delays_sec[0:5]: %s", time_delays_sec[0:5])
+    
+    # output_samples = input_samples * np.exp(1j*2*np.pi*freq_adj_hz*time_delays_sec)
+    correlation = np.correlate(proc_samples, target_corr_samples, mode='valid')        
+
+    threshold = 400 #approximately sps*gclen*0.5
+    peaks, properties = signal.find_peaks(abs(correlation), height=threshold, prominence=threshold*0.3)
+    
+    # Get the first peak above threshold
+    if len(peaks) > 0:
+        first_peak_index = peaks[0]
+        first_peak_value = correlation[first_peak_index]
+        first_peak_time_sec = first_peak_index/fs_hz
+        first_peak_sign = np.sign(np.real(first_peak_value))
+      
+        logger.info("first peak-> sample number: %s, value: %s, time: %s, sign: %s", first_peak_index, first_peak_value, first_peak_time_sec, first_peak_sign)
+    else:
+        logger.warning("No peaks found!")
+        first_peak_index = 0
+        first_peak_sign = 1
+        
+    #roll to the first peak
+    proc_samples = np.roll(proc_samples, -1*first_peak_index)
+    
+    #find the sps and resample
+    if len(peaks) > 1:
+        # Compute differences between consecutive peak indexes
+        peak_diffs = np.diff(peaks)
+        avg_peak_diff = np.mean(peak_diffs)
+        expected_peak_diff = 1270  # Expected samples between peaks
+        
+        logger.info("Found %d peaks at indexes: %s", len(peaks), peaks.tolist())
+        logger.info("Peak differences: %s", peak_diffs.tolist())
+        logger.info("Average peak difference: %.2f samples", avg_peak_diff)
+        logger.info("Expected peak difference: %d samples", expected_peak_diff)
+        # logger.info("Average peak difference: %.3f ms", avg_peak_diff/radio_params.samplerate_hz*1000)
+        
+        # Resample signal to correct timing
+        resample_ratio = expected_peak_diff / avg_peak_diff
+        logger.info("Resampling ratio: %.6f", resample_ratio)
+        
+        proc_samples = signal.resample_poly(proc_samples, int(resample_ratio*1000), 1000)
+        logger.info("Resampled signal length: %d samples", len(proc_samples))
+        
+        proc_samples = proc_samples[0:1270*(96+4)]
+        logger.info("Truncated signal to %d samples", len(proc_samples))
+        
+        # Plot correlation and peaks
+        if enable_plotting:
+            plt.figure(figsize=(12, 6))
+            plt.subplot(2, 1, 1)
+            plt.plot(abs(correlation))
+            plt.plot(peaks, abs(correlation)[peaks], 'rx', markersize=10, label='Detected Peaks')
+            plt.axhline(y=threshold, color='r', linestyle='--', label=f'Threshold={threshold}')
+            plt.title('Correlation with Preamble Pattern')
+            plt.xlabel('Sample Index')
+            plt.ylabel('Correlation Magnitude')
+            plt.legend()
+            plt.grid(True)
+            
+            plt.subplot(2, 1, 2)
+            plt.plot(range(len(peak_diffs)), peak_diffs, 'bo-')
+            plt.axhline(y=avg_peak_diff, color='r', linestyle='--', label=f'Average={avg_peak_diff:.1f}')
+            plt.title('Peak Spacing')
+            plt.xlabel('Peak Pair Index')
+            plt.ylabel('Sample Difference')
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+            
+    # Create full preamble modulated with goldcode at 10 samples per symbol
+    from IoTBSConst import GCs, preamble
+    sps = 10
+    tag_id = 0  # Using first goldcode for now
+    goldcode = GCs[tag_id]
+    payload_bits = np.array([0,1,0,0,1,0,1,0,0,1,1,0,1,1,1,1])
+    
+    # Create preamble sequence: each bit modulated by goldcode, then upsampled
+    preamble_gc_sps = np.array([])
+    nbits = 16
+    for i in range(nbits):
+        bit = preamble[i]
+        # bit = payload_bits[i]
+    # for bit in preamble:
+        # Convert bit (0/1) to BPSK (-1/+1), multiply by goldcode, then upsample
+        bit_bpsk = 2 * bit - 1  # Convert 0->-1, 1->+1
+        modulated_chip_seq = goldcode * bit_bpsk
+        upsampled_seq = np.repeat(modulated_chip_seq.astype(np.complex64), sps)
+        preamble_gc_sps = np.concatenate([preamble_gc_sps, upsampled_seq])
+            
+    correlation = np.correlate(proc_samples, preamble_gc_sps, mode='valid')
+    
+    # if (enable_plotting):
+    plt.figure()
+    plt.plot(abs(correlation))
+    # plt.axhline(y=threshold, color='r', linestyle='--', label=f'Threshold={threshold}')
+    plt.title('Correlation with Preamble Pattern')
+    plt.xlabel('Sample Index')
+    plt.ylabel('Correlation Magnitude')
+    plt.legend()
+    plt.grid(True)
+    
+    plt.show()
+
+    
+    
+    return proc_samples
     
 
 def mm_time_recovery(samples, samps_per_symbol):
@@ -321,8 +485,9 @@ def demodulate_packet(input_samples, tag_params, radio_params, enable_plotting=F
     subset_samples = input_samples[start_ind:start_ind+num_samps]
     
     #mix to center at -50kHz
-    offset_freq_hz = 0 #505
+    offset_freq_hz = 505
     center_freq_hz = -50e3+offset_freq_hz
+    # center_freq_hz = 0
     time_array_sec = np.linspace(0,(len(subset_samples)-1)/radio_params.samplerate_hz, len(subset_samples))
     mixed_samples = subset_samples*np.exp(-1j*2*np.pi*center_freq_hz*time_array_sec)
     
@@ -354,7 +519,9 @@ def demodulate_packet(input_samples, tag_params, radio_params, enable_plotting=F
         max_output_freq_dev_hz = 100
         npts_freq_search = int(np.ceil(max_input_freq_dev_hz *2/max_output_freq_dev_hz)+1)
         resampled_gc = np.repeat(itagParams.goldcode.astype(np.complex64) , itagParams.sps)
-        proc_samples = time_freq_code_search(proc_samples, resampled_gc, itagParams.sps, radio_params.samplerate_hz, max_input_freq_dev_hz, npts_freq_search, enable_plotting)
+        # proc_samples = time_freq_code_search(proc_samples, resampled_gc, itagParams.sps, radio_params.samplerate_hz, max_input_freq_dev_hz, npts_freq_search, enable_plotting)
+        proc_samples = time_code_resamp_search(proc_samples, resampled_gc, itagParams.sps, radio_params.samplerate_hz, max_input_freq_dev_hz, npts_freq_search, enable_plotting)
+
 
         # despread
         # bits_to_calc = len(itagParams.actual_bits)
