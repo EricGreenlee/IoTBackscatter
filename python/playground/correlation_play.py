@@ -52,9 +52,9 @@ proc_samples = np.concatenate([samples, np.zeros(len(samples)).astype(np.complex
 
 
 #optional- add noise, agc, and roll
-integer_delay = 0
+integer_delay = 100
 noise_sd = 0
-resamp_ratio = 0.999
+resamp_ratio = 1
 
 print(f"Integer_delay: {integer_delay}, noise_sd: {noise_sd}, sesamp_ratio: {resamp_ratio}")
 
@@ -94,6 +94,22 @@ plt.plot(peak_index, peak_value, 'ro', markersize=8, label=f'Peak = {peak_value:
 plt.title(f"Correlation with {nbits} bits - Peak Value: {peak_value:.2f}")
 plt.xlabel('Sample Index')
 plt.ylabel('Correlation Magnitude')
+plt.legend()
+plt.grid(True)
+
+# autocorrelation
+auto_corr = np.correlate(proc_samples, proc_samples, mode='full')
+nsamps = len(proc_samples)
+lags = np.arange(-nsamps+1, nsamps)
+
+
+# Plot the peak point
+plt.figure()
+plt.plot(lags, np.abs(auto_corr))
+# plt.plot(peak_index, peak_value, 'ro', markersize=8, label=f'Peak = {peak_value:.2f}')
+plt.title(f"Auto Correlation ")
+plt.xlabel('Sample Index')
+plt.ylabel('AutoCorrelation Magnitude')
 plt.legend()
 plt.grid(True)
 

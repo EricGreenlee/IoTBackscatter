@@ -3,7 +3,8 @@ import argparse
 import logging
 import sys
 
-import demod_2
+# import demod_2
+import demod
 import IoTBSConst
 import matplotlib.pyplot as plt
 import numpy as np
@@ -180,7 +181,7 @@ def main():
             sys.exit(1)
 
         # logger.debug("Packet to demod: %s", samples)
-        iteration_results = demod_2.demodulate_packet(samples, tag_params, radio_params, enable_plotting=args.plot)
+        iteration_results = demod.demodulate_packet(samples, tag_params, radio_params, enable_plotting=args.plot)
         all_results.append(iteration_results)
         
         # Accumulate totals for each tag

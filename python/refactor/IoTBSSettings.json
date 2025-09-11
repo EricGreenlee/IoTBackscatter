@@ -23,35 +23,15 @@
     }
   },
   "demodulator_settings": {
-    "output_file": null,
-    "start_index": 251000,
-    "num_samples": 127000,
-    "mixing": {
-      "bypass": false,
-      "center_freq_hz": -50000,
-      "freq_offset_hz": 505
+    "manual_enable": {
+      "freq": true,
+      "resamp": false,
+      "start_index": false
     },
-    "filtering": {
-      "bypass": false,
-      "filter_cutoff_hz": 25000,
-      "filter_order": 5
-    },
-    "agc": {
-      "bypass": false,
-      "agc_target_amplitude": 0.7071
-    },
-    "code_search": {
-      "bypass": false,
-      "manual_mode": {
-        "freq": true,
-        "resamp": true,
-        "time": true
-      },
-      "manual_params": {
-        "frequency_offset_hz": 0,
-        "resampling_ratio": 0.999,
-        "time_offset_samples": 0
-      }
+    "manual_value": {
+      "freq_hz": -500,
+      "resamp_rate": 1.0071,
+      "start_index": 254345
     }
   }
 }

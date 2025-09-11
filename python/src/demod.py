@@ -575,7 +575,7 @@ def demodulate_packet(input_samples, tag_params, radio_params, enable_plotting=F
         # plt.title("rx_bits_raw")
         # plt.grid("on")
         
-        logger.debug("rx_bits_raw: %s", rx_bits_raw)
+        # logger.debug("rx_bits_raw: %s", rx_bits_raw)
         
         #average over cdma symbol - create array filled with NaNs
         nbits_data = len(itagParams.actual_bits)
