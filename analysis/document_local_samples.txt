@@ -1,0 +1,4 @@
+usrp_n210_20250911_113432_915MHz_1.000Msps_50.0dB_100000samps.npy -> hackrf_transfer -f 914840800 -x 47 -c 127 -a 1; unpowered tag set up at ~50cm 
+usrp_n210_20250911_121153_915MHz_1.000Msps_50.0dB_100000samps.npy -> hackrf_transfer -f 914840800 -x 47 -c 127 -a 1; oscillating tag set up at ~50cm 
+usrp_n210_20250911_122909_915MHz_1.000Msps_50.0dB_100000samps.npy -> hackrf_transfer -f 914840800 -x 47 -c 127 -a 1; tag set up with alternating 0's and 1's at ~50cm 
+usrp_n210_20250911_124317_915MHz_1.000Msps_50.0dB_100000samps.npy -> hackrf_transfer -f 914840800 -x 47 -c 127 -a 1; tag transmitting repeated goldcode at ~50cm 

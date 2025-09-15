@@ -177,15 +177,20 @@ int goldcode[n_gcs][gc_len] = {
 //                         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 //                         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 //                         1,1,1,1};
-const int bit_len = 96;
-int bits_bin[bit_len] = {1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0, //4x preamble
-                        1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,
-                        1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,
-                        1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,
 
-                        0,1,1,1,0,0,0,1,0,1,1,1,0,1,0,1,//code word
 
-                        0,1,0,0,1,0,1,0,0,1,1,0,1,1,1,1}; //Jo
+// const int bit_len = 96;
+// int bits_bin[bit_len] = {1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0, //4x preamble
+//                         1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,
+//                         1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,
+//                         1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,
+
+//                         0,1,1,1,0,0,0,1,0,1,1,1,0,1,0,1,//code word
+
+//                         0,1,0,0,1,0,1,0,0,1,1,0,1,1,1,1}; //Jo
+
+const int bit_len = 1;
+int bits_bin[bit_len] = {1}; //Jo
 
 
 //make array of all 1's for testing
@@ -276,6 +281,16 @@ int count = 0;
 
 void loop(){
 
+    // // transmit carrier wave continuously
+    // dac_invert_set(DAC_CHANNEL_1,2);
+
+    // // transmit alternating phase continuously
+    // dac_invert_set(DAC_CHANNEL_1,2);
+    // delayMicroseconds(usec_delay);
+    // dac_invert_set(DAC_CHANNEL_1,3);
+    // delayMicroseconds(usec_delay);
+
+    // transmit modulated data
     for (int i = 0; i < CDMA_packet_len; i++){
         if (CDMA_packet_bin[i] == 1){
             dac_invert_set(DAC_CHANNEL_1,2);
@@ -286,9 +301,9 @@ void loop(){
         delayMicroseconds(usec_delay);
     }
 
-    dac_output_disable(DAC_CHANNEL_1);
-    delayMicroseconds(usec_delay*gc_len*10);
-    dac_output_enable(DAC_CHANNEL_1);
+    // dac_output_disable(DAC_CHANNEL_1);
+    // delayMicroseconds(usec_delay*gc_len*10);
+    // dac_output_enable(DAC_CHANNEL_1);
  
   
 }
