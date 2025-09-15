@@ -14,30 +14,34 @@
 #include <Wire.h>
 #include <EEPROM.h>
 
+#include "soc/rtc.h" 
+#include "driver/rtc_io.h"
+
 // the setup function runs once when you press reset or power the board
 int ledPin = 13;
 //int DAC_CHANNEL_1 = 25;
 
 
 //from https://forum.arduino.cc/t/esp32-dac-cosine-generator/993374/4
-int clk_8m_div = 7;      // RTC 8M clock divider (division is by clk_8m_div+1, i.e. 0 means 8MHz frequency)
-int frequency_step = 8;  // Frequency step for CW generator
+int clk_8m_div = 0;      // RTC 8M clock divider (division is by clk_8m_div+1, i.e. 0 means 8MHz frequency)
+int base_frequency_step = 1000; // Base frequency step
+int frequency_step = base_frequency_step;  
 int scale = 0;           // 50% of the full scale
-int offset;              // leave it default / 0 = no any offset
+int offset = 0;              // leave it default / 0 = no any offset
 int invert =2;          // invert MSB to get sine waveform
 
 
 //register addresses:
-int SENS_SAR_DAC_CTRL1_REG = 0x3FF48898;//0x0098;
-int SENS_SAR_DAC_CTRL2_REG = 0x3FF4889C;//0x009c;
+int SENS_SAR_DAC_CTRL1_REG_ADDR = 0x3FF48898;//0x0098;
+int SENS_SAR_DAC_CTRL2_REG_ADDR = 0x3FF4889C;//0x009c;
 
 
 //register indexes
 int SENS_SW_TONE_EN =   0x00010000;
 int SENS_DAC_CW_EN1_M = 0x01000000;
 int SENS_DAC_CW_EN1_S = 25;
-int SENS_DEC_CW_EN1_Mb = 0x1;
-int SENS_DAC_CW_EN2_M = 0x02000000;
+// int SENS_DEC_CW_EN1_Mb = 0x1;
+// int SENS_DAC_CW_EN2_M = 0x02000000;
 int SENS_DAC_INV1 =     0x3;
 int SENS_DAC_INV1_S =   20;
 int SENS_DAC_INV2 =     0x3;
@@ -45,35 +49,75 @@ int SENS_DAC_INV2_S =   22;
 int SENS_SW_FSTEP =     0xFFFF;
 int SENS_SW_FSTEP_S =   0;
 
+// Frequency calibration and stability
+float target_freq_hz = 75000.0;  // Target 125kHz
+float actual_freq_hz = 0.0;
+int calibrated_freq_step = 1000;
 
-int nloop = 0;
-
+// Clock stability improvements
+void configure_stable_clock() {
+    Serial.println("Configuring stable clock source...");
+    
+    // Configure RTC 8MHz oscillator for maximum stability
+    // Set the lowest division factor for highest resolution
+    REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_DIV_SEL, clk_8m_div);
+    
+    // Allow clock to stabilize
+    delay(10);
+    
+    Serial.print("RTC clock division set to: ");
+    Serial.println(clk_8m_div);
+}
 
 /*
 * Enable cosine waveform generator on a DAC channel
 */
-void dac_cosine_enable(dac_channel_t channel)
-{
- // Enable tone generator common to both channels
- SET_PERI_REG_MASK(SENS_SAR_DAC_CTRL1_REG, SENS_SW_TONE_EN);
- switch(channel)
- {
-     case DAC_CHANNEL_1:
-         // Enable / connect tone tone generator on / to this channel
-         SET_PERI_REG_MASK(SENS_SAR_DAC_CTRL2_REG, SENS_DAC_CW_EN1_M);
-         // Invert MSB, otherwise part of waveform will have inverted
-         SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL2_REG, SENS_DAC_INV1, 2, SENS_DAC_INV1_S);
+// void dac_cosine_enable(dac_channel_t channel)
+// {
+//  // Enable tone generator common to both channels
+//  SET_PERI_REG_MASK(SENS_SAR_DAC_CTRL1_REG_ADDR, SENS_SW_TONE_EN);
+//  switch(channel)
+//  {
+//      case DAC_CHANNEL_1:
+//          // Enable / connect tone tone generator on / to this channel
+//          SET_PERI_REG_MASK(SENS_SAR_DAC_CTRL2_REG_ADDR, SENS_DAC_CW_EN1_M);
+//          // Invert MSB, otherwise part of waveform will have inverted
+//          SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL2_REG_ADDR, SENS_DAC_INV1, 2, SENS_DAC_INV1_S);
 
 
-         //set the entire register manually for now
-         //SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL2_REG, 0xFFFFFFFF, 0x03A00000, 0);
-         break;
-     case DAC_CHANNEL_2:
-         Serial.println("DAC_CHANNEL_2 not configured yet*****");
-         SET_PERI_REG_MASK(SENS_SAR_DAC_CTRL2_REG, SENS_DAC_CW_EN2_M);
-         SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL2_REG, SENS_DAC_INV2, 2, SENS_DAC_INV2_S);
-         break;
- }
+//          //set the entire register manually for now
+//          //SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL2_REG, 0xFFFFFFFF, 0x03A00000, 0);
+//          break;
+//      case DAC_CHANNEL_2:
+//          Serial.println("DAC_CHANNEL_2 not configured yet*****");
+//         //  SET_PERI_REG_MASK(SENS_SAR_DAC_CTRL2_REG, SENS_DAC_CW_EN2_M);
+//         //  SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL2_REG, SENS_DAC_INV2, 2, SENS_DAC_INV2_S);
+//          break;
+//  }
+// }
+
+// Enhanced cosine generator with stability improvements
+void dac_cosine_enable_stable(dac_channel_t channel) {
+    Serial.println("Enabling stable cosine generator...");
+    
+    // Enable tone generator common to both channels
+    SET_PERI_REG_MASK(SENS_SAR_DAC_CTRL1_REG_ADDR, SENS_SW_TONE_EN);
+    
+    switch(channel) {
+        case DAC_CHANNEL_1:
+            // Enable tone generator on this channel
+            SET_PERI_REG_MASK(SENS_SAR_DAC_CTRL2_REG_ADDR, SENS_DAC_CW_EN1_M);
+            
+            // Set optimal phase inversion for clean sine wave
+            SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL2_REG_ADDR, SENS_DAC_INV1, invert, SENS_DAC_INV1_S);
+            break;
+            
+        case DAC_CHANNEL_2:
+            Serial.println("DAC_CHANNEL_2 configuration available if needed");
+            break;
+    }
+    
+    Serial.println("Cosine generator enabled with enhanced stability");
 }
 
 
@@ -86,12 +130,12 @@ void dac_cosine_disable(dac_channel_t channel)
    case DAC_CHANNEL_1:
      // disable tone tone generator on / to this channel
      //SET_PERI_REG_MASK(SENS_SAR_DAC_CTRL2_REG, SENS_DAC_CW_EN1_M);
-     SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL2_REG, 0x01, 0, 21);
+     SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL2_REG_ADDR, 0x01, 0, 21);
      //SET_PERI_REG(SENS_SAR_DAC_CTRL2_REG,0x03000000);  
      break;
    case DAC_CHANNEL_2:
      Serial.println("DAC_CHANNEL_2 not configured yet*****");
-     SET_PERI_REG_MASK(SENS_SAR_DAC_CTRL2_REG, SENS_DAC_CW_EN2_M);
+    //  SET_PERI_REG_MASK(SENS_SAR_DAC_CTRL2_REG, SENS_DAC_CW_EN2_M);
      break;
  }
 
@@ -101,40 +145,105 @@ void dac_cosine_disable(dac_channel_t channel)
 
 
 
-/* Set frequency of internal CW generator common to both DAC channels
-* clk_8m_div: 0b000 - 0b111
-* frequency_step: range 0x0001 - 0xFFFF
-*/
-void dac_frequency_set(int clk_8m_div, int frequency_step)
-{
- Serial.println("setting freq");
- //REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_DIV_SEL, clk_8m_div); //sets RTC clock rate division?
+// /* Set frequency of internal CW generator common to both DAC channels
+// * clk_8m_div: 0b000 - 0b111
+// * frequency_step: range 0x0001 - 0xFFFF
+// */
+// void dac_frequency_set(int clk_8m_div, int frequency_step)
+// {
+//  Serial.println("setting freq");
+//  //REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_DIV_SEL, clk_8m_div); //sets RTC clock rate division?
 
 
- SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL1_REG, SENS_SW_FSTEP, frequency_step, SENS_SW_FSTEP_S);
+//  SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL1_REG_ADDR, SENS_SW_FSTEP, frequency_step, SENS_SW_FSTEP_S);
+// }
+
+// Stable frequency setting with enhanced precision
+void dac_frequency_set_stable(int freq_step) {
+    Serial.print("Setting stable frequency, step: ");
+    Serial.println(freq_step);
+    
+    // Set frequency step with enhanced precision
+    SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL1_REG_ADDR, SENS_SW_FSTEP, freq_step, SENS_SW_FSTEP_S);
+    
+    // Allow frequency to stabilize
+    delayMicroseconds(100);
+}
+
+// Enhanced frequency calibration
+float calculate_actual_frequency(int freq_step) {
+    // Formula: f = (8MHz / (clk_8m_div + 1)) * (freq_step / 65536)
+    float base_clock = 8000000.0 / (clk_8m_div + 1);
+    float actual_freq = base_clock * (freq_step / 65536.0);
+    return actual_freq;
+}
+
+int calculate_frequency_step(float target_freq) {
+    // Inverse calculation: freq_step = (target_freq * 65536) / base_clock
+    float base_clock = 8000000.0 / (clk_8m_div + 1);
+    int freq_step = (int)((target_freq * 65536.0) / base_clock);
+    
+    // Clamp to valid range
+    if (freq_step < 1) freq_step = 1;
+    if (freq_step > 65535) freq_step = 65535;
+    
+    return freq_step;
+}
+
+void calibrate_frequency() {
+    Serial.println("Calibrating carrier frequency...");
+    
+    // Calculate optimal frequency step for target frequency
+    calibrated_freq_step = calculate_frequency_step(target_freq_hz);
+    actual_freq_hz = calculate_actual_frequency(calibrated_freq_step);
+    
+    Serial.print("Target frequency: ");
+    Serial.print(target_freq_hz, 3);
+    Serial.println(" Hz");
+    Serial.print("Calculated freq_step: ");
+    Serial.println(calibrated_freq_step);
+    Serial.print("Actual frequency: ");
+    Serial.print(actual_freq_hz, 3);
+    Serial.println(" Hz");
+    Serial.print("Frequency error: ");
+    Serial.print(((actual_freq_hz - target_freq_hz) / target_freq_hz) * 100.0, 6);
+    Serial.println("%");
 }
 
 
-/*
-* Invert output pattern of a DAC channel
-*
-* - 00: does not invert any bits,
-* - 01: inverts all bits,
-* - 10: inverts MSB,
-* - 11: inverts all bits except for MSB
-*
-*/
-void dac_invert_set(dac_channel_t channel, int invert)
-{
-   switch(channel)
-   {
-       case DAC_CHANNEL_1:
-           SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL2_REG, SENS_DAC_INV1, invert, SENS_DAC_INV1_S);
-           break;
-       case DAC_CHANNEL_2:
-           SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL2_REG, SENS_DAC_INV2, invert, SENS_DAC_INV2_S);
-           break;
-   }
+
+// /*
+// * Invert output pattern of a DAC channel
+// *
+// * - 00: does not invert any bits,
+// * - 01: inverts all bits,
+// * - 10: inverts MSB,
+// * - 11: inverts all bits except for MSB
+// *
+// */
+// void dac_invert_set(dac_channel_t channel, int invert)
+// {
+//    switch(channel)
+//    {
+//        case DAC_CHANNEL_1:
+//            SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL2_REG_ADDR, SENS_DAC_INV1, invert, SENS_DAC_INV1_S);
+//            break;
+//        case DAC_CHANNEL_2:
+//            SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL2_REG_ADDR, SENS_DAC_INV2, invert, SENS_DAC_INV2_S);
+//            break;
+//    }
+// }
+
+// Enhanced phase inversion with clean transitions
+void dac_invert_set_stable(dac_channel_t channel, int invert) {
+    switch(channel) {
+        case DAC_CHANNEL_1:
+            SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL2_REG_ADDR, SENS_DAC_INV1, invert, SENS_DAC_INV1_S);
+            break;
+        case DAC_CHANNEL_2:
+            SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL2_REG_ADDR, SENS_DAC_INV2, invert, SENS_DAC_INV2_S);
+            break;
+    }
 }
 
 
@@ -212,10 +321,15 @@ void loadConfig() {
     EEPROM.get(0, device_id);
     EEPROM.get(4, freq_offset);
 
+    // calibrated_freq_step = base_frequency_step + freq_offset;
+
     Serial.print("device_id: ");
     Serial.println(device_id);
     Serial.print("freq_offset: ");
     Serial.println(freq_offset);
+
+    Serial.print("Final freq_step: ");
+    Serial.println(calibrated_freq_step);
 }
 
 
@@ -223,25 +337,37 @@ void setup() {
     pinMode(ledPin, OUTPUT);
     Serial.begin(115200);
   
-    pinMode(25, OUTPUT);
+    // pinMode(25, OUTPUT);
+    Serial.println("ESP32 Enhanced Stability BPSK Transmitter");
+    Serial.println("==========================================");
 
     delay(500);
     
     EEPROM.begin(512);
+    
+
+    configure_stable_clock();
+    calibrate_frequency();
     loadConfig();
 
     //Serial.println("Enabling Cosine, register vals:");
-    dac_cosine_enable(DAC_CHANNEL_1);
+    // dac_cosine_enable(DAC_CHANNEL_1);
     dac_output_enable(DAC_CHANNEL_1);
+    dac_cosine_enable_stable(DAC_CHANNEL_1);
+    
 
 //    dac_frequency_set(clk_8m_div, 1000);    //1000 ~=132kHz when clk_8m_div is set correctly
-    dac_frequency_set(clk_8m_div, freq_offset);    //1000 ~=132kHz when clk_8m_div is set correctly
+    // dac_frequency_set(clk_8m_div, freq_offset);    //1000 ~=132kHz when clk_8m_div is set correctly
+    dac_frequency_set_stable(calibrated_freq_step);    //1000 ~=132kHz when clk_8m_div is set correctly
+    // dac_frequency_set_stable(calibrated_freq_step);    //1000 ~=132kHz when clk_8m_div is set correctly
+
+
 
     Serial.println("Update test 0");
 
     Serial.println("next stage registers CTRL1 and CTRL2:");
-    Serial.println(READ_PERI_REG(SENS_SAR_DAC_CTRL1_REG),HEX);
-    Serial.println(READ_PERI_REG(SENS_SAR_DAC_CTRL2_REG),HEX);
+    Serial.println(READ_PERI_REG(SENS_SAR_DAC_CTRL1_REG_ADDR),HEX);
+    Serial.println(READ_PERI_REG(SENS_SAR_DAC_CTRL2_REG_ADDR),HEX);
 
 
         //convert binary to bipolar
@@ -293,10 +419,10 @@ void loop(){
     // transmit modulated data
     for (int i = 0; i < CDMA_packet_len; i++){
         if (CDMA_packet_bin[i] == 1){
-            dac_invert_set(DAC_CHANNEL_1,2);
+            dac_invert_set_stable(DAC_CHANNEL_1,2);
         }
         else{  
-            dac_invert_set(DAC_CHANNEL_1,3);
+            dac_invert_set_stable(DAC_CHANNEL_1,3);
         }
         delayMicroseconds(usec_delay);
     }

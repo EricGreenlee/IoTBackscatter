@@ -132,6 +132,17 @@ def plt_time_peaks(samples, sample_rate_hz, title_prefix="", peak_height=None, p
     for i, (time, value) in enumerate(zip(peak_lags, peak_values)):  # show first 10
         logger.info(f"Peak {i+1}: {time} lag, magnitude: {value:.4f}")
     
+    # calculate and log differences between consecutive peaks
+    if len(peaks) > 1:
+        peak_diffs = np.diff(peaks)
+        logger.info(f"\nPeak index differences:")
+        for i, diff in enumerate(peak_diffs):
+            logger.info(f"Peak {i+1} to Peak {i+2}: {diff} samples")
+        
+        if len(peak_diffs) > 0:
+            logger.info(f"Mean difference: {np.mean(peak_diffs):.1f} samples")
+            logger.info(f"Std deviation: {np.std(peak_diffs):.1f} samples")
+    
     # plot
     plt.figure(figsize=(12, 6))
     
@@ -188,7 +199,8 @@ sample_rate_hz = 1000000
 # fname = "local_samples/usrp_n210_20250912_182742_915MHz_0.248Msps_50.0dB_100000samps.npy" 
 # fname = "local_samples/usrp_n210_20250912_183113_915MHz_0.252Msps_50.0dB_100000samps.npy"#sampled to aim for 10 SPS exactly
 # fname = "local_samples/usrp_n210_20250912_183807_915MHz_1.003Msps_50.0dB_100000samps.npy"
-fname = "local_samples/usrp_n210_20250912_184742_915MHz_1.000Msps_50.0dB_200000samps.npy"
+# fname = "local_samples/usrp_n210_20250912_184742_915MHz_1.000Msps_50.0dB_200000samps.npy"
+fname = "local_samples/usrp_n210_20250915_175847_915MHz_1.000Msps_50.0dB_200000samps.npy" #uses new arduino code that may be more frequency stable, at 75khz
 
 
 try:
@@ -225,34 +237,34 @@ peak_threshold = 0
 fft, fft_db, freqs_hz, peak_freqs_hz, peak_amplitudes_db = plt_fft(samples, sample_rate_hz, "Original - ")
 
 # zoom plot around a specific frequency range
-zoom_center_khz = -50  # center frequency for zoom (kHz)
+zoom_center_khz = -94  # center frequency for zoom (kHz)
 zoom_bandwidth_khz = 100  # bandwidth for zoom (kHz)
 
-# plt.figure()
-# zoom_mask = (freqs_hz/1e3 >= zoom_center_khz - zoom_bandwidth_khz/2) & (freqs_hz/1e3 <= zoom_center_khz + zoom_bandwidth_khz/2)
-# plt.plot(freqs_hz[zoom_mask]/1e3, fft_db[zoom_mask], label='FFT Magnitude (Zoomed)')
+plt.figure()
+zoom_mask = (freqs_hz/1e3 >= zoom_center_khz - zoom_bandwidth_khz/2) & (freqs_hz/1e3 <= zoom_center_khz + zoom_bandwidth_khz/2)
+plt.plot(freqs_hz[zoom_mask]/1e3, fft_db[zoom_mask], label='FFT Magnitude (Zoomed)')
 
-# # show peaks in zoom range
-# zoom_peak_mask = (peak_freqs_hz/1e3 >= zoom_center_khz - zoom_bandwidth_khz/2) & (peak_freqs_hz/1e3 <= zoom_center_khz + zoom_bandwidth_khz/2)
-# if np.any(zoom_peak_mask):
-#     zoom_peak_freqs = peak_freqs_hz[zoom_peak_mask]
-#     zoom_peak_amps = peak_amplitudes_db[zoom_peak_mask]
-#     plt.plot(zoom_peak_freqs/1e3, zoom_peak_amps, 'ro', markersize=8, label=f'Peaks in range ({np.sum(zoom_peak_mask)} found)')
+# show peaks in zoom range
+zoom_peak_mask = (peak_freqs_hz/1e3 >= zoom_center_khz - zoom_bandwidth_khz/2) & (peak_freqs_hz/1e3 <= zoom_center_khz + zoom_bandwidth_khz/2)
+if np.any(zoom_peak_mask):
+    zoom_peak_freqs = peak_freqs_hz[zoom_peak_mask]
+    zoom_peak_amps = peak_amplitudes_db[zoom_peak_mask]
+    plt.plot(zoom_peak_freqs/1e3, zoom_peak_amps, 'ro', markersize=8, label=f'Peaks in range ({np.sum(zoom_peak_mask)} found)')
 
 
 
-# plt.axhline(y=peak_threshold, color='orange', linestyle=':', label=f'Peak Threshold ({peak_threshold:.1f} dB)')
-# plt.ylabel("amplitude (db)")
-# plt.xlabel("frequency (kHz)")
-# plt.legend()
-# plt.grid(True)
-# plt.title(f"Zoomed FFT: {zoom_center_khz} ± {zoom_bandwidth_khz/2} kHz")
-# plt.xlim(zoom_center_khz - zoom_bandwidth_khz/2, zoom_center_khz + zoom_bandwidth_khz/2)
+plt.axhline(y=peak_threshold, color='orange', linestyle=':', label=f'Peak Threshold ({peak_threshold:.1f} dB)')
+plt.ylabel("amplitude (db)")
+plt.xlabel("frequency (kHz)")
+plt.legend()
+plt.grid(True)
+plt.title(f"Zoomed FFT: {zoom_center_khz} ± {zoom_bandwidth_khz/2} kHz")
+plt.xlim(zoom_center_khz - zoom_bandwidth_khz/2, zoom_center_khz + zoom_bandwidth_khz/2)
 
 #mix, filter, and AGC
-proc_samples = samples[0:100000]
+proc_samples = samples#[0:100000]
 time_array_sec = np.linspace(0,(len(proc_samples)-1)/sample_rate_hz,len(proc_samples))
-mix_freq_hz = -50e3
+mix_freq_hz = -94e3
 data_rate_hz = 25000
 
 proc_samples = proc_samples*np.exp(-1j*2*np.pi*mix_freq_hz*time_array_sec)
@@ -291,7 +303,7 @@ scipy_corr = signal.correlate(proc_samples, proc_samples, mode="full")
 # plt.title("correlation from scipy")
 # plt.grid(True)
 
-plt_time_peaks(scipy_corr, sample_rate_hz, "correlation from scipy")
+plt_time_peaks(scipy_corr, sample_rate_hz, "correlation from scipy", peak_height=10000)
 
 # np_corr_rev = np.correlate(proc_samples, proc_samples[::-1], mode="full")
 
@@ -310,22 +322,44 @@ plt_time_peaks(scipy_corr, sample_rate_hz, "correlation from scipy")
 
 # plt_time_peaks(scipy_corr_rev, sample_rate_hz, "correlation from scipy reversed")
 
-#correlate with simulated goldcode
-# sim_gc_sps = {}
-# gc_corr = {}
+# correlate with simulated goldcode
+sim_gc_sps = {}
+gc_corr = {}
 
 target_sps = 40
+# actual_sps = 39.7
+manual_resamp_rate = 5080/5042.5
+proc_samples = signal.resample_poly(proc_samples, int(manual_resamp_rate*10000), 10000)
+new_time_array_sec = np.linspace(0,(len(proc_samples)-1)/sample_rate_hz,len(proc_samples))
+
 sim_gc_sps = np.repeat(GCs[0].astype(np.complex64), target_sps)
 
-freq_array_hz = [-800]#np.linspace(-900, -700, 9)
+# freq_array_hz = np.linspace(-500, -100, 9)
+freq_array_hz = [-300]
+freq_hz = -300
+proc_samples = proc_samples*np.exp(-1j*2*np.pi*freq_hz*new_time_array_sec)
 
 
-for freq_hz in freq_array_hz :
+# for freq_hz in freq_array_hz :
     
-    mixed_samples = proc_samples*np.exp(-1j*2*np.pi*freq_hz*time_array_sec)
+#     mixed_samples = proc_samples*np.exp(-1j*2*np.pi*freq_hz*new_time_array_sec)
 
-    gc_corr = signal.correlate(mixed_samples, sim_gc_sps, mode="full")
+#     gc_corr = signal.correlate(mixed_samples, sim_gc_sps, mode="full")
 
-    plt_time_peaks(gc_corr, sample_rate_hz, f"correlation with goldcode at {freq_hz} Hz")
+#     plt_time_peaks(gc_corr, sample_rate_hz, f"correlation with goldcode at {freq_hz} Hz", peak_height=1000, distance = 1000)
+
+
+#correlate with repeated goldcodes
+num_gcs_rep_array = [1,4,16,64]
+
+for num_gcs_rep in num_gcs_rep_array:
+    
+    sim_gc_rep = np.tile(sim_gc_sps, num_gcs_rep)
+    
+    gc_corr = signal.correlate(proc_samples, sim_gc_rep, mode="full")
+
+    plt_time_peaks(gc_corr, sample_rate_hz, f"correlation with {num_gcs_rep} goldcodes ", peak_height=1000*num_gcs_rep, distance = 1000)
+
+
 
 plt.show()
