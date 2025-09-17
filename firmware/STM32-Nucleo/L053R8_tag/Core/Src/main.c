@@ -21,7 +21,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -31,7 +33,11 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+// Low frequency test parameters - 1kHz sine wave
+#define SAMPLE_RATE 100000 // 100kHz sample rate (much slower)
+#define SINE_FREQ 1000     // 1kHz sine wave (much slower)
+#define SAMPLES 100        // SAMPLE_RATE / SINE_FREQ = 100 samples per cycle
+#define DAC_MAX 4095       // 12-bit DAC maximum value
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -41,20 +47,27 @@
 
 /* Private variables ---------------------------------------------------------*/
 DAC_HandleTypeDef hdac;
+TIM_HandleTypeDef htim6;
 
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-
+// Sine wave data buffer
+uint16_t sine_wave[SAMPLES];
+DMA_HandleTypeDef hdma_dac_ch1; // Moved here to protect from CubeMX regeneration
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void SystemClock_Config(void);
 void MX_GPIO_Init(void);
 void MX_USART2_UART_Init(void);
 void MX_DAC_Init(void);
+void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
-
+void Generate_Sine_Table(void);
+void MX_DMA_Init(void);
+void MX_TIM6_Init(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -91,22 +104,52 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();  // Add this line - DMA must be initialized before DAC
+  MX_TIM6_Init(); // Initialize Timer 6
   MX_USART2_UART_Init();
   MX_DAC_Init();
   /* USER CODE BEGIN 2 */
 
+  // Generate sine wave lookup table
+  Generate_Sine_Table();
+
+  // Debug: Print first 10 samples
+  char debug_msg[100];
+  HAL_UART_Transmit(&huart2, (uint8_t *)"Sine wave samples (1kHz test):\r\n", 32, HAL_MAX_DELAY);
+  for (int i = 0; i < 10; i++)
+  {
+    sprintf(debug_msg, "Sample %d: %d (%.2fV)\r\n", i, sine_wave[i], (float)sine_wave[i] * 3.3f / 4095.0f);
+    HAL_UART_Transmit(&huart2, (uint8_t *)debug_msg, strlen(debug_msg), HAL_MAX_DELAY);
+  }
+
   // Send startup message
-  char msg[] = "LED Blink with UART and DAC Started!\r\n";
+  char msg[] = "1kHz Sinusoid Test Started!\r\n";
   HAL_UART_Transmit(&huart2, (uint8_t *)msg, sizeof(msg) - 1, HAL_MAX_DELAY);
 
-  // Start DAC and set to 1.65V (mid-range voltage)
-  HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
-  HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 2048); // 2048 = 50% of 4096 = 1.65V
+  // Start DAC with DMA in circular mode
+  if (HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t *)sine_wave, SAMPLES, DAC_ALIGN_12B_R) != HAL_OK)
+  {
+    char error_msg[] = "ERROR: DAC DMA start failed!\r\n";
+    HAL_UART_Transmit(&huart2, (uint8_t *)error_msg, sizeof(error_msg) - 1, HAL_MAX_DELAY);
+  }
+  else
+  {
+    char dac_msg[] = "DAC DMA started successfully\r\n";
+    HAL_UART_Transmit(&huart2, (uint8_t *)dac_msg, sizeof(dac_msg) - 1, HAL_MAX_DELAY);
+  }
 
-  char dac_msg[] = "DAC started - 1.65V constant output on PA4\r\n";
-  HAL_UART_Transmit(&huart2, (uint8_t *)dac_msg, sizeof(dac_msg) - 1, HAL_MAX_DELAY);
+  // Start Timer 6 to trigger DAC
+  if (HAL_TIM_Base_Start(&htim6) != HAL_OK)
+  {
+    char timer_error[] = "ERROR: Timer 6 start failed!\r\n";
+    HAL_UART_Transmit(&huart2, (uint8_t *)timer_error, sizeof(timer_error) - 1, HAL_MAX_DELAY);
+  }
+  else
+  {
+    char timer_msg[] = "Timer 6 started - 1kHz sine wave on PA4\r\n";
+    HAL_UART_Transmit(&huart2, (uint8_t *)timer_msg, sizeof(timer_msg) - 1, HAL_MAX_DELAY);
+  }
 
-  static uint8_t square_state = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -118,26 +161,25 @@ int main(void)
     /* USER CODE BEGIN 3 */
     HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
-    // Send LED status messages
-    char led_msg[] = "LED Toggle\r\n";
-    HAL_UART_Transmit(&huart2, (uint8_t *)led_msg, sizeof(led_msg) - 1, HAL_MAX_DELAY);
-
-    if (square_state == 0)
+    // Test: Manual DAC update to verify DAC is working
+    static int manual_test = 0;
+    if (manual_test < 10)
     {
-      HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 600); // ~0.5V
-      char low_msg[] = "Square LOW (0.5V)\r\n";
-      HAL_UART_Transmit(&huart2, (uint8_t *)low_msg, sizeof(low_msg) - 1, HAL_MAX_DELAY);
-      square_state = 1;
+      // Try setting DAC manually to different values
+      HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, manual_test < 5 ? 1000 : 3000);
+      char test_msg[50];
+      sprintf(test_msg, "Manual DAC test: %d\r\n", manual_test < 5 ? 1000 : 3000);
+      HAL_UART_Transmit(&huart2, (uint8_t *)test_msg, strlen(test_msg), HAL_MAX_DELAY);
+      manual_test++;
     }
     else
     {
-      HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 3500); // ~2.8V
-      char high_msg[] = "Square HIGH (2.8V)\r\n";
-      HAL_UART_Transmit(&huart2, (uint8_t *)high_msg, sizeof(high_msg) - 1, HAL_MAX_DELAY);
-      square_state = 0;
+      // Status message - sine wave should be running via DMA
+      char status_msg[] = "DMA sine wave should be running...\r\n";
+      HAL_UART_Transmit(&huart2, (uint8_t *)status_msg, sizeof(status_msg) - 1, HAL_MAX_DELAY);
     }
 
-    HAL_Delay(2000);
+    HAL_Delay(1000); // Slower status updates
   }
   /* USER CODE END 3 */
 }
@@ -217,7 +259,7 @@ void MX_DAC_Init(void)
 
   /** DAC channel OUT1 config
    */
-  sConfig.DAC_Trigger = DAC_TRIGGER_NONE;
+  sConfig.DAC_Trigger = DAC_TRIGGER_T6_TRGO; // Changed: Use Timer 6 trigger
   sConfig.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
   if (HAL_DAC_ConfigChannel(&hdac, &sConfig, DAC_CHANNEL_1) != HAL_OK)
   {
@@ -301,7 +343,50 @@ void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void MX_TIM6_Init(void)
+{
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
 
+  __HAL_RCC_TIM6_CLK_ENABLE();
+
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = 0;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = (SystemCoreClock / SAMPLE_RATE) - 1; // For 1MHz sample rate
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  HAL_TIM_Base_Init(&htim6);
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig);
+}
+
+void MX_DMA_Init(void)
+{
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  hdma_dac_ch1.Instance = DMA1_Channel2;
+  hdma_dac_ch1.Init.Request = DMA_REQUEST_9; // DAC_CH1 request
+  hdma_dac_ch1.Init.Direction = DMA_MEMORY_TO_PERIPH;
+  hdma_dac_ch1.Init.PeriphInc = DMA_PINC_DISABLE;
+  hdma_dac_ch1.Init.MemInc = DMA_MINC_ENABLE;
+  hdma_dac_ch1.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+  hdma_dac_ch1.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
+  hdma_dac_ch1.Init.Mode = DMA_CIRCULAR;
+  hdma_dac_ch1.Init.Priority = DMA_PRIORITY_HIGH;
+  HAL_DMA_Init(&hdma_dac_ch1);
+
+  __HAL_LINKDMA(&hdac, DMA_Handle1, hdma_dac_ch1);
+}
+
+void Generate_Sine_Table(void)
+{
+  for (int i = 0; i < SAMPLES; i++)
+  {
+    float angle = (2.0f * M_PI * i) / SAMPLES;
+    sine_wave[i] = (uint16_t)((sinf(angle) + 1.0f) * (DAC_MAX / 2));
+  }
+}
 /* USER CODE END 4 */
 
 /**

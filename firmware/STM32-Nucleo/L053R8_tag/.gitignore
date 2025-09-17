@@ -1,0 +1,35 @@
+# Build folder
+build/
+
+# Object files
+*.o
+*.obj
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
+*.d
+
+# IDE files
+.vscode/
+.settings/
+.project
+.cproject
+*.launch
+
+# OS files
+.DS_Store
+Thumbs.db
+*~
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Debug files
+*.dSYM/
+
+# STM32CubeMX backup files
+*.ioc.bak
