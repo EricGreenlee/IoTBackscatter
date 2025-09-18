@@ -33,11 +33,11 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-// Low frequency test parameters - 1kHz sine wave
-#define SAMPLE_RATE 100000 // 100kHz sample rate (much slower)
-#define SINE_FREQ 1000     // 1kHz sine wave (much slower)
-#define SAMPLES 100        // SAMPLE_RATE / SINE_FREQ = 100 samples per cycle
-#define DAC_MAX 4095       // 12-bit DAC maximum value
+// Clean sine wave test - find sample rate limits
+#define SAMPLE_RATE 200000                // highest stable: 400k
+#define SINE_FREQ 50000                   // 10kHz sine wave
+#define SAMPLES (SAMPLE_RATE / SINE_FREQ) // Samples per cycle
+#define DAC_MAX 4095                      // 12-bit DAC maximum value
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -52,7 +52,7 @@ TIM_HandleTypeDef htim6;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-// Sine wave data buffer
+// Clean sine wave buffer
 uint16_t sine_wave[SAMPLES];
 DMA_HandleTypeDef hdma_dac_ch1; // Moved here to protect from CubeMX regeneration
 /* USER CODE END PV */
@@ -110,23 +110,25 @@ int main(void)
   MX_DAC_Init();
   /* USER CODE BEGIN 2 */
 
-  // Generate sine wave lookup table
+  // Generate clean sine wave
   Generate_Sine_Table();
 
-  // Debug: Print first 10 samples
+  // Report test parameters
+  char param_msg[150];
+  sprintf(param_msg, "Sample Rate: %d Hz, Sine Freq: %d Hz, Samples/cycle: %d\r\n",
+          SAMPLE_RATE, SINE_FREQ, SAMPLES);
+  HAL_UART_Transmit(&huart2, (uint8_t *)param_msg, strlen(param_msg), HAL_MAX_DELAY);
+
+  // Debug: Print first few samples
   char debug_msg[100];
-  HAL_UART_Transmit(&huart2, (uint8_t *)"Sine wave samples (1kHz test):\r\n", 32, HAL_MAX_DELAY);
-  for (int i = 0; i < 10; i++)
+  HAL_UART_Transmit(&huart2, (uint8_t *)"Sine wave samples:\r\n", 20, HAL_MAX_DELAY);
+  for (int i = 0; i < 5; i++)
   {
     sprintf(debug_msg, "Sample %d: %d (%.2fV)\r\n", i, sine_wave[i], (float)sine_wave[i] * 3.3f / 4095.0f);
     HAL_UART_Transmit(&huart2, (uint8_t *)debug_msg, strlen(debug_msg), HAL_MAX_DELAY);
   }
 
-  // Send startup message
-  char msg[] = "1kHz Sinusoid Test Started!\r\n";
-  HAL_UART_Transmit(&huart2, (uint8_t *)msg, sizeof(msg) - 1, HAL_MAX_DELAY);
-
-  // Start DAC with DMA in circular mode
+  // Start DAC with DMA
   if (HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t *)sine_wave, SAMPLES, DAC_ALIGN_12B_R) != HAL_OK)
   {
     char error_msg[] = "ERROR: DAC DMA start failed!\r\n";
@@ -138,7 +140,7 @@ int main(void)
     HAL_UART_Transmit(&huart2, (uint8_t *)dac_msg, sizeof(dac_msg) - 1, HAL_MAX_DELAY);
   }
 
-  // Start Timer 6 to trigger DAC
+  // Start Timer 6
   if (HAL_TIM_Base_Start(&htim6) != HAL_OK)
   {
     char timer_error[] = "ERROR: Timer 6 start failed!\r\n";
@@ -146,8 +148,10 @@ int main(void)
   }
   else
   {
-    char timer_msg[] = "Timer 6 started - 1kHz sine wave on PA4\r\n";
-    HAL_UART_Transmit(&huart2, (uint8_t *)timer_msg, sizeof(timer_msg) - 1, HAL_MAX_DELAY);
+    char timer_msg[100];
+    sprintf(timer_msg, "Timer 6 started - %dkHz sine @ %d samples/cycle on PA4\r\n",
+            SINE_FREQ / 1000, SAMPLES);
+    HAL_UART_Transmit(&huart2, (uint8_t *)timer_msg, strlen(timer_msg), HAL_MAX_DELAY);
   }
 
   /* USER CODE END 2 */
@@ -161,25 +165,13 @@ int main(void)
     /* USER CODE BEGIN 3 */
     HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
-    // Test: Manual DAC update to verify DAC is working
-    static int manual_test = 0;
-    if (manual_test < 10)
-    {
-      // Try setting DAC manually to different values
-      HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, manual_test < 5 ? 1000 : 3000);
-      char test_msg[50];
-      sprintf(test_msg, "Manual DAC test: %d\r\n", manual_test < 5 ? 1000 : 3000);
-      HAL_UART_Transmit(&huart2, (uint8_t *)test_msg, strlen(test_msg), HAL_MAX_DELAY);
-      manual_test++;
-    }
-    else
-    {
-      // Status message - sine wave should be running via DMA
-      char status_msg[] = "DMA sine wave should be running...\r\n";
-      HAL_UART_Transmit(&huart2, (uint8_t *)status_msg, sizeof(status_msg) - 1, HAL_MAX_DELAY);
-    }
+    // Status message with performance info
+    char status_msg[100];
+    sprintf(status_msg, "Running: %dkHz sine @ %dksps sample rate (%d samples/cycle)\r\n",
+            SINE_FREQ / 1000, SAMPLE_RATE / 10000, SAMPLES);
+    HAL_UART_Transmit(&huart2, (uint8_t *)status_msg, strlen(status_msg), HAL_MAX_DELAY);
 
-    HAL_Delay(1000); // Slower status updates
+    HAL_Delay(2000); // Update every 2 seconds
   }
   /* USER CODE END 3 */
 }
@@ -343,6 +335,21 @@ void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void Generate_Sine_Table(void)
+{
+  for (int i = 0; i < SAMPLES; i++)
+  {
+    float angle = (2.0f * M_PI * i) / SAMPLES;
+    // Center at 1.65V with ±1.5V amplitude
+    float sine_val = sinf(angle);
+    sine_wave[i] = (uint16_t)(2048 + (sine_val * 1862));
+
+    // Clamp to valid DAC range
+    if (sine_wave[i] > 4095)
+      sine_wave[i] = 4095;
+  }
+}
+
 void MX_TIM6_Init(void)
 {
   TIM_MasterConfigTypeDef sMasterConfig = {0};
@@ -352,7 +359,7 @@ void MX_TIM6_Init(void)
   htim6.Instance = TIM6;
   htim6.Init.Prescaler = 0;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = (SystemCoreClock / SAMPLE_RATE) - 1; // For 1MHz sample rate
+  htim6.Init.Period = (SystemCoreClock / SAMPLE_RATE) - 1;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   HAL_TIM_Base_Init(&htim6);
 
@@ -366,7 +373,7 @@ void MX_DMA_Init(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   hdma_dac_ch1.Instance = DMA1_Channel2;
-  hdma_dac_ch1.Init.Request = DMA_REQUEST_9; // DAC_CH1 request
+  hdma_dac_ch1.Init.Request = DMA_REQUEST_9;
   hdma_dac_ch1.Init.Direction = DMA_MEMORY_TO_PERIPH;
   hdma_dac_ch1.Init.PeriphInc = DMA_PINC_DISABLE;
   hdma_dac_ch1.Init.MemInc = DMA_MINC_ENABLE;
@@ -377,15 +384,6 @@ void MX_DMA_Init(void)
   HAL_DMA_Init(&hdma_dac_ch1);
 
   __HAL_LINKDMA(&hdac, DMA_Handle1, hdma_dac_ch1);
-}
-
-void Generate_Sine_Table(void)
-{
-  for (int i = 0; i < SAMPLES; i++)
-  {
-    float angle = (2.0f * M_PI * i) / SAMPLES;
-    sine_wave[i] = (uint16_t)((sinf(angle) + 1.0f) * (DAC_MAX / 2));
-  }
 }
 /* USER CODE END 4 */
 
