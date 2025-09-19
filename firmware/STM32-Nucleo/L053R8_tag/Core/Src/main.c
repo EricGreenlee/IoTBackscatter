@@ -24,6 +24,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include "precomputed_samples.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -33,11 +34,49 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-// Low frequency test parameters - 1kHz sine wave
-#define SAMPLE_RATE 1000 // 100kHz sample rate (much slower)
-#define SINE_FREQ 10     // 1kHz sine wave (much slower)
-#define SAMPLES 100      // SAMPLE_RATE / SINE_FREQ = 100 samples per cycle
-#define DAC_MAX 4095     // 12-bit DAC maximum value
+// === Streaming parameters ===
+#define SAMPLE_RATE 100000 // 200 ksps DAC update rate
+#define CARRIER_SAMPLES 4  // 4 samples per 50 kHz cycle
+#define GOLD_LEN 127
+#define SYMBOL_SAMPLES (GOLD_LEN * 16) // 2032 samples per encoded bit
+#define BUF_SAMPLES 2048               // DMA circular buffer (2 halves)
+#define HALF_SAMPLES (BUF_SAMPLES / 2) // 1024 per half
+#define IDLE_BITS 4
+
+// const int preamble[64] = {
+//     1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0,
+//     1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0,
+//     1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0,
+//     1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0};
+const int preamble[64] = {
+    1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
+    1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
+    1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
+    1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
+// const int payload[16] = {0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1};
+const int payload[16] = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
+
+// int goldcode[GOLD_LEN] = {
+//     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, 1, 1, -1,
+//     -1, -1, 1, 1, -1, 1, 1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, -1, 1, 1,
+//     -1, -1, 1, -1, 1, 1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, -1, 1, 1, 1,
+//     1, 1, 1, 1, -1, -1, 1, 1, 1, 1, 1, 1, -1, 1, 1, -1, 1, -1, -1, 1,
+//     1, 1, 1, 1, -1, 1, -1, 1, -1, -1, 1, 1, -1, 1, -1, -1, 1, 1, 1, 1,
+//     1, 1, -1, -1, 1, -1, 1, 1, -1};
+// uint16_t gold_pos[SYMBOL_SAMPLES];
+// uint16_t gold_neg[SYMBOL_SAMPLES];
+
+static int packet_bits[80];
+
+static uint16_t dma_buf[BUF_SAMPLES]; // 4 KB
+
+// Streaming state
+static int cur_bit = 0;                  // 0..79
+static int sym_offset = 0;               // 0..2032
+static int in_idle = 0;                  // 0=packet streaming, 1=idle (2048)
+static int idle_sent = 0;                // how many idle "bits" have been sent
+static int idle_remain = SYMBOL_SAMPLES; // samples remaining in the current idle "bit"
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -53,24 +92,31 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 // Sine wave data buffer
-uint16_t sine_wave[SAMPLES];
+// uint16_t sine_wave[SAMPLES];
 DMA_HandleTypeDef hdma_dac_ch1; // Moved here to protect from CubeMX regeneration
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-void SystemClock_Config(void);
+// void SystemClock_Config(void);
 void MX_GPIO_Init(void);
 void MX_USART2_UART_Init(void);
 void MX_DAC_Init(void);
 void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
-void Generate_Sine_Table(void);
 void MX_DMA_Init(void);
-void MX_TIM6_Init(void);
-void DMA1_Channel2_IRQHandler(void);
+// void Generate_Sine_Table(void);
+
+// void MX_TIM6_Init(void);
+// void DMA1_Channel2_IRQHandler(void);
 void HAL_DAC_ConvHalfCpltCallbackCh1(DAC_HandleTypeDef *hdac);
 void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *hdac);
+// void GenerateGoldTables(void);
+static void BuildPacket(void);
+static void FillHalf(int half_index);
+static void restart_packet_stream(void);
+static void enter_idle(void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -113,33 +159,43 @@ int main(void)
   MX_DAC_Init();
   /* USER CODE BEGIN 2 */
 
-  // Generate sine wave lookup table
-  Generate_Sine_Table();
+  // GenerateGoldTables();
+  BuildPacket();
+  restart_packet_stream(); // <— add this line
 
-  // Debug: Print first 10 samples
-  char debug_msg[100];
-  HAL_UART_Transmit(&huart2, (uint8_t *)"Sine wave samples (1kHz test):\r\n", 32, HAL_MAX_DELAY);
-  for (int i = 0; i < 10; i++)
-  {
-    sprintf(debug_msg, "Sample %d: %d (%.2fV)\r\n", i, sine_wave[i], (float)sine_wave[i] * 3.3f / 4095.0f);
-    HAL_UART_Transmit(&huart2, (uint8_t *)debug_msg, strlen(debug_msg), HAL_MAX_DELAY);
-  }
+  FillHalf(0);
+  FillHalf(1);
 
-  // Send startup message
-  char msg[] = "1kHz Sinusoid Test Started!\r\n";
-  HAL_UART_Transmit(&huart2, (uint8_t *)msg, sizeof(msg) - 1, HAL_MAX_DELAY);
+  HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t *)dma_buf, BUF_SAMPLES, DAC_ALIGN_12B_R);
+  // HAL_TIM_Base_Start(&htim6);
 
-  // Start DAC with DMA in circular mode
-  if (HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t *)sine_wave, SAMPLES, DAC_ALIGN_12B_R) != HAL_OK)
-  {
-    char error_msg[] = "ERROR: DAC DMA start failed!\r\n";
-    HAL_UART_Transmit(&huart2, (uint8_t *)error_msg, sizeof(error_msg) - 1, HAL_MAX_DELAY);
-  }
-  else
-  {
-    char dac_msg[] = "DAC DMA started successfully\r\n";
-    HAL_UART_Transmit(&huart2, (uint8_t *)dac_msg, sizeof(dac_msg) - 1, HAL_MAX_DELAY);
-  }
+  // // Generate sine wave lookup table
+  // Generate_Sine_Table();
+
+  // // Debug: Print first 10 samples
+  // char debug_msg[100];
+  // HAL_UART_Transmit(&huart2, (uint8_t *)"Sine wave samples (1kHz test):\r\n", 32, HAL_MAX_DELAY);
+  // for (int i = 0; i < 10; i++)
+  // {
+  //   sprintf(debug_msg, "Sample %d: %d (%.2fV)\r\n", i, sine_wave[i], (float)sine_wave[i] * 3.3f / 4095.0f);
+  //   HAL_UART_Transmit(&huart2, (uint8_t *)debug_msg, strlen(debug_msg), HAL_MAX_DELAY);
+  // }
+
+  // // Send startup message
+  // char msg[] = "1kHz Sinusoid Test Started!\r\n";
+  // HAL_UART_Transmit(&huart2, (uint8_t *)msg, sizeof(msg) - 1, HAL_MAX_DELAY);
+
+  // // Start DAC with DMA in circular mode
+  // if (HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t *)sine_wave, SAMPLES, DAC_ALIGN_12B_R) != HAL_OK)
+  // {
+  //   char error_msg[] = "ERROR: DAC DMA start failed!\r\n";
+  //   HAL_UART_Transmit(&huart2, (uint8_t *)error_msg, sizeof(error_msg) - 1, HAL_MAX_DELAY);
+  // }
+  // else
+  // {
+  //   char dac_msg[] = "DAC DMA started successfully\r\n";
+  //   HAL_UART_Transmit(&huart2, (uint8_t *)dac_msg, sizeof(dac_msg) - 1, HAL_MAX_DELAY);
+  // }
 
   // Start Timer 6 to trigger DAC
   if (HAL_TIM_Base_Start(&htim6) != HAL_OK)
@@ -164,23 +220,23 @@ int main(void)
     /* USER CODE BEGIN 3 */
     HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
-    // Test: Manual DAC update to verify DAC is working
-    static int manual_test = 0;
-    if (manual_test < 10)
-    {
-      // Try setting DAC manually to different values
-      HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, manual_test < 5 ? 1000 : 3000);
-      char test_msg[50];
-      sprintf(test_msg, "Manual DAC test: %d\r\n", manual_test < 5 ? 1000 : 3000);
-      HAL_UART_Transmit(&huart2, (uint8_t *)test_msg, strlen(test_msg), HAL_MAX_DELAY);
-      manual_test++;
-    }
-    else
-    {
-      // Status message - sine wave should be running via DMA
-      char status_msg[] = "DMA sine wave should be running...\r\n";
-      HAL_UART_Transmit(&huart2, (uint8_t *)status_msg, sizeof(status_msg) - 1, HAL_MAX_DELAY);
-    }
+    // // Test: Manual DAC update to verify DAC is working
+    // static int manual_test = 0;
+    // if (manual_test < 10)
+    // {
+    //   // Try setting DAC manually to different values
+    //   HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, manual_test < 5 ? 1000 : 3000);
+    //   char test_msg[50];
+    //   sprintf(test_msg, "Manual DAC test: %d\r\n", manual_test < 5 ? 1000 : 3000);
+    //   HAL_UART_Transmit(&huart2, (uint8_t *)test_msg, strlen(test_msg), HAL_MAX_DELAY);
+    //   manual_test++;
+    // }
+    // else
+    // {
+    //   // Status message - sine wave should be running via DMA
+    //   char status_msg[] = "DMA sine wave should be running...\r\n";
+    //   HAL_UART_Transmit(&huart2, (uint8_t *)status_msg, sizeof(status_msg) - 1, HAL_MAX_DELAY);
+    // }
 
     HAL_Delay(1000); // Slower status updates
   }
@@ -355,7 +411,7 @@ void MX_TIM6_Init(void)
   htim6.Instance = TIM6;
   htim6.Init.Prescaler = 0;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = (SystemCoreClock / SAMPLE_RATE) - 1; // For 1MHz sample rate
+  htim6.Init.Period = (SystemCoreClock / SAMPLE_RATE) - 1; // drive DAC at SAMPLE_RATE
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   HAL_TIM_Base_Init(&htim6);
 
@@ -394,25 +450,148 @@ void MX_DMA_Init(void)
 // Called when first half of buffer is done
 void HAL_DAC_ConvHalfCpltCallbackCh1(DAC_HandleTypeDef *hdac)
 {
-  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin); // blink LED
-  const char *msg = "DMA half-transfer interrupt!\r\n";
-  HAL_UART_Transmit(&huart2, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
+  // HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin); // blink LED
+  // const char *msg = "DMA half-transfer interrupt!\r\n";
+  // HAL_UART_Transmit(&huart2, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
+  FillHalf(0);
 }
 
 // Called when second half is done
 void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *hdac)
 {
-  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin); // blink LED
-  const char *msg = "DMA full-transfer interrupt!\r\n";
-  HAL_UART_Transmit(&huart2, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
+  // HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin); // blink LED
+  // const char *msg = "DMA full-transfer interrupt!\r\n";
+  // HAL_UART_Transmit(&huart2, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
+  FillHalf(1);
 }
 
-void Generate_Sine_Table(void)
+// void Generate_Sine_Table(void)
+// {
+//   for (int i = 0; i < SAMPLES; i++)
+//   {
+//     float angle = (2.0f * M_PI * i) / SAMPLES;
+//     sine_wave[i] = (uint16_t)((sinf(angle) + 1.0f) * (DAC_MAX / 2));
+//   }
+// }
+
+// void GenerateGoldTables(void)
+// {
+//   // 4-sample 50kHz sinusoid @ 200ksps: [mid, max, mid, min]
+//   int16_t base_wave[4] = {2048, 4095, 2048, 0};
+
+//   int idx = 0;
+//   for (int i = 0; i < GOLD_LEN; i++)
+//   {
+//     for (int j = 0; j < 16; j++)
+//     {
+//       int carrier_idx = (j % 4);
+//       int16_t sample = base_wave[carrier_idx];
+
+//       // Multiply by goldcode chip (+1/-1)
+//       if (goldcode[i] == -1)
+//       {
+//         sample = 4095 - sample; // phase inversion
+//       }
+
+//       gold_pos[idx] = sample;        // for data bit = 1
+//       gold_neg[idx] = 4095 - sample; // for data bit = 0
+//       idx++;
+//     }
+//   }
+// }
+
+static void BuildPacket(void)
 {
-  for (int i = 0; i < SAMPLES; i++)
+  for (int i = 0; i < 64; i++)
+    packet_bits[i] = preamble[i];
+  for (int i = 0; i < 16; i++)
+    packet_bits[64 + i] = payload[i];
+}
+// Returns pointer to the precomputed table for the current bit
+static inline const uint16_t *table_for_bit(int bit_value)
+{
+  // 1 => normal (in-phase), 0 => inverted (anti-phase)
+  return bit_value ? normal_goldcode_samples : inverted_goldcode_samples;
+}
+
+static void restart_packet_stream(void)
+{
+  cur_bit = 0;
+  sym_offset = 0;
+  in_idle = 0;
+  idle_sent = 0;
+  idle_remain = SYMBOL_SAMPLES;
+}
+
+static void enter_idle(void)
+{
+  in_idle = 1;
+  idle_sent = 0;
+  idle_remain = SYMBOL_SAMPLES;
+}
+
+static void FillHalf(int half_index)
+{
+  uint16_t *dst = &dma_buf[half_index * HALF_SAMPLES];
+  int remaining_in_half = HALF_SAMPLES;
+
+  while (remaining_in_half > 0)
   {
-    float angle = (2.0f * M_PI * i) / SAMPLES;
-    sine_wave[i] = (uint16_t)((sinf(angle) + 1.0f) * (DAC_MAX / 2));
+    if (!in_idle)
+    {
+      // === Streaming packet bits ===
+      const uint16_t *tab = table_for_bit(packet_bits[cur_bit]);
+
+      int remain_in_symbol = SYMBOL_SAMPLES - sym_offset;
+      int to_copy = (remain_in_symbol < remaining_in_half) ? remain_in_symbol : remaining_in_half;
+
+      memcpy(dst, &tab[sym_offset], to_copy * sizeof(uint16_t));
+
+      dst += to_copy;
+      remaining_in_half -= to_copy;
+      sym_offset += to_copy;
+
+      if (sym_offset >= SYMBOL_SAMPLES)
+      {
+        sym_offset = 0;
+        cur_bit++;
+
+        if (cur_bit >= 80)
+        {
+          // Finished the whole packet → go idle
+          enter_idle();
+        }
+      }
+    }
+    else
+    {
+      // === Idle at mid-level (2048) for IDLE_BITS symbols ===
+      int to_fill = (idle_remain < remaining_in_half) ? idle_remain : remaining_in_half;
+
+      for (int i = 0; i < to_fill; i++)
+      {
+        dst[i] = 2048;
+      }
+
+      dst += to_fill;
+      remaining_in_half -= to_fill;
+      idle_remain -= to_fill;
+
+      if (idle_remain == 0)
+      {
+        idle_sent++;
+        if (idle_sent >= IDLE_BITS)
+        {
+          // Done with idle — restart sequence from the first bit
+          restart_packet_stream();
+        }
+        else
+        {
+          // Next idle "bit"
+          idle_remain = SYMBOL_SAMPLES;
+        }
+      }
+    }
   }
 }
 /* USER CODE END 4 */
