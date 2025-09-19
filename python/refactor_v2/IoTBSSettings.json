@@ -1,0 +1,37 @@
+{
+  "radio_settings": {
+    "samplerate_hz": 1000000,
+    "carrier_freq_hz": 915000000,
+    "target_sps": 80
+  },
+  "sim_settings": {
+    "duration_ratio": 5,
+    "enable_nonideal": {
+      "sps": true,
+      "noise": true,
+      "attenuation": true,
+      "frequency": true,
+      "time": true
+    },
+    "nonideal_vals": {
+      "sps_ratio": 0.1,
+      "tx_pwr_dbm": 30.0,
+      "noise_pwr_dbm": -45.0,
+      "tag2modem_dist_m": 1,
+      "max_freq_offset_hz": 500,
+      "max_time_delay_sec": 4
+    }
+  },
+  "demodulator_settings": {
+    "manual_enable": {
+      "freq": false,
+      "resamp": false,
+      "start_index": false
+    },
+    "manual_value": {
+      "freq_hz": -500,
+      "resamp_rate": 1.0071,
+      "start_index": 254345
+    }
+  }
+}

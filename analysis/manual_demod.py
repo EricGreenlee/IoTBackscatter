@@ -202,7 +202,7 @@ sample_rate_hz = 1000000
 # fname = "local_samples/usrp_n210_20250912_182742_915MHz_0.248Msps_50.0dB_100000samps.npy" 
 # fname = "local_samples/usrp_n210_20250912_183113_915MHz_0.252Msps_50.0dB_100000samps.npy"#sampled to aim for 10 SPS exactly
 # fname = "local_samples/usrp_n210_20250912_183807_915MHz_1.003Msps_50.0dB_100000samps.npy"
-fname = "local_samples/usrp_n210_20250912_184742_915MHz_1.000Msps_50.0dB_200000samps.npy"
+# fname = "local_samples/usrp_n210_20250912_184742_915MHz_1.000Msps_50.0dB_200000samps.npy"
 # fname = "local_samples/usrp_n210_20250915_175847_915MHz_1.000Msps_50.0dB_200000samps.npy" #uses new arduino code that may be more frequency stable, at 75khz
 # fname = "local_samples/usrp_n210_20250915_183405_915MHz_1.000Msps_50.0dB_200000samps.npy" #stable freq with modulated signal
 # fname = "local_samples/usrp_n210_20250915_184724_915MHz_1.000Msps_50.0dB_1000000samps.npy" #stable freq with modulated signal and sufficient samples
@@ -214,7 +214,7 @@ fname = "local_samples/usrp_n210_20250912_184742_915MHz_1.000Msps_50.0dB_200000s
 # fname = "local_samples/usrp_n210_20250918_135918_915MHz_1.000Msps_50.0dB_2000000samps.npy" #L053R8 tag, 50khz carrier, 80us per bit, preamble and payload
 # fname = "local_samples/usrp_n210_20250918_141826_915MHz_1.000Msps_50.0dB_2000000samps.npy" #L053R8 tag, 50khz carrier, 80us per bit, preamble and payload all 1's with a break between
 # fname = "local_samples/usrp_n210_20250919_125228_915MHz_1.000Msps_50.0dB_4000000samps.npy" #L053R8 tag (better clock + buffer), 50khz carrier, 80us per bit, packet with all 1's
-# fname = "local_samples/usrp_n210_20250919_130428_915MHz_1.000Msps_50.0dB_4000000samps.npy" #L053R8 tag (better clock + buffer), 50khz carrier, 80us per bit, proper packet 
+fname = "local_samples/usrp_n210_20250919_130428_915MHz_1.000Msps_50.0dB_4000000samps.npy" #L053R8 tag (better clock + buffer), 50khz carrier, 80us per bit, proper packet 
 
 try:
     samples = np.load(fname)
@@ -275,13 +275,13 @@ fft, fft_db, freqs_hz, peak_freqs_hz, peak_amplitudes_db = plt_fft(samples, samp
 # plt.xlim(zoom_center_khz - zoom_bandwidth_khz/2, zoom_center_khz + zoom_bandwidth_khz/2)
 
 #mix, filter, and AGC
-# proc_samples = samples[1300000:2200000]
-proc_samples = samples
+proc_samples = samples[1300000:2200000]
+# proc_samples = samples
 time_array_sec = np.linspace(0,(len(proc_samples)-1)/sample_rate_hz,len(proc_samples))
-# mix_freq_hz = -124.5e3
-mix_freq_hz = -50e3
-# data_rate_hz = 12500
-data_rate_hz = 25000
+mix_freq_hz = -124.5e3
+# mix_freq_hz = -50e3
+data_rate_hz = 12500
+# data_rate_hz = 25000
 
 
 
@@ -350,11 +350,11 @@ plt_time_peaks(scipy_corr, sample_rate_hz, "autocorrelation from scipy", peak_he
 # gc_corr = {}
 
 input_sps = 80
-# target_sps = 80
-target_sps = 40
+target_sps = 80
+# target_sps = 40
 # actual_sps = 39.7
-# manual_resamp_rate = 10160/10114#/(input_sps/target_sps)
-manual_resamp_rate = 5080/5045#/(input_sps/target_sps)
+manual_resamp_rate = 10160/10114#/(input_sps/target_sps)
+# manual_resamp_rate = 5080/5045#/(input_sps/target_sps)
 proc_samples = signal.resample_poly(proc_samples, int(manual_resamp_rate*10000), 10000)
 new_time_array_sec = np.linspace(0,(len(proc_samples)-1)/sample_rate_hz,len(proc_samples))
 
@@ -372,8 +372,8 @@ sim_gc_sps = np.repeat(GCs[0].astype(np.complex64), target_sps)
 
 #     plt_time_peaks(gc_corr, sample_rate_hz, f"correlation with goldcode at {freq_hz} Hz", peak_height=2000, distance = 1000)
 
-freq_hz = -800
-# freq_hz = 250
+# freq_hz = -800
+freq_hz = 250
 proc_samples = proc_samples*np.exp(-1j*2*np.pi*freq_hz*new_time_array_sec)
 
 # #correlate with repeated goldcodes

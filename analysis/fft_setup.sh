@@ -22,7 +22,7 @@ sleep 2
 # Start USRP N210 receiver in foreground (blocks until complete)
 echo "Starting USRP N210 receiver..."
 # python3 USRP_N210_RX_samples.py --freq 915e6 --rate 25e4 --gain 50 --num_samps 100000 --plot
-python3 USRP_N210_RX_samples.py --freq 915e6 --rate 1e6 --gain 50 --num_samps 200000 --plot
+python3 USRP_N210_RX_samples.py --freq 915e6 --rate 1e6 --gain 50 --num_samps 4000000 --plot
 
 # When receiver finishes, stop the HackRF transmitter
 if [ -f $HACKRF_PID_FILE ]; then
