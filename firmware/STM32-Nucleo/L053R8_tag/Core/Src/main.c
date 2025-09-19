@@ -34,10 +34,10 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 // Low frequency test parameters - 1kHz sine wave
-#define SAMPLE_RATE 100000 // 100kHz sample rate (much slower)
-#define SINE_FREQ 1000     // 1kHz sine wave (much slower)
-#define SAMPLES 100        // SAMPLE_RATE / SINE_FREQ = 100 samples per cycle
-#define DAC_MAX 4095       // 12-bit DAC maximum value
+#define SAMPLE_RATE 1000 // 100kHz sample rate (much slower)
+#define SINE_FREQ 10     // 1kHz sine wave (much slower)
+#define SAMPLES 100      // SAMPLE_RATE / SINE_FREQ = 100 samples per cycle
+#define DAC_MAX 4095     // 12-bit DAC maximum value
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -68,6 +68,9 @@ void MX_TIM6_Init(void);
 void Generate_Sine_Table(void);
 void MX_DMA_Init(void);
 void MX_TIM6_Init(void);
+void DMA1_Channel2_IRQHandler(void);
+void HAL_DAC_ConvHalfCpltCallbackCh1(DAC_HandleTypeDef *hdac);
+void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *hdac);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -377,6 +380,31 @@ void MX_DMA_Init(void)
   HAL_DMA_Init(&hdma_dac_ch1);
 
   __HAL_LINKDMA(&hdac, DMA_Handle1, hdma_dac_ch1);
+
+  // === NEW: Enable DMA interrupts in NVIC ===
+  HAL_NVIC_SetPriority(DMA1_Channel2_3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
+}
+
+// void DMA1_Channel2_IRQHandler(void)
+// {
+//   HAL_DMA_IRQHandler(&hdma_dac_ch1);
+// }
+
+// Called when first half of buffer is done
+void HAL_DAC_ConvHalfCpltCallbackCh1(DAC_HandleTypeDef *hdac)
+{
+  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin); // blink LED
+  const char *msg = "DMA half-transfer interrupt!\r\n";
+  HAL_UART_Transmit(&huart2, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
+}
+
+// Called when second half is done
+void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *hdac)
+{
+  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin); // blink LED
+  const char *msg = "DMA full-transfer interrupt!\r\n";
+  HAL_UART_Transmit(&huart2, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
 }
 
 void Generate_Sine_Table(void)

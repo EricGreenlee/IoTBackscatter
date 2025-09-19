@@ -1,0 +1,47 @@
+CDMA BPSK Goldcode Sample Generation Report
+==================================================
+
+Signal Parameters:
+  Sample Rate: 200000 Hz
+  Carrier Frequency: 50000 Hz
+  Samples per Cycle: 4
+  Samples per Chip: 16
+  Chip Rate: 12500.0 Hz
+
+Goldcode:
+  Length: 127 chips
+  Samples per goldcode: 4064
+  Goldcode time: 20.32 ms
+
+Frame Structure:
+  Preamble: 64 bits
+  Payload: 16 bits
+  Total Data Bits: 80
+  Frame Time: 1625.60 ms
+
+Storage Optimization:
+  Strategy: Store 2 goldcode sequences, select based on bit polarity
+  Normal goldcode samples: 4064 (8128 bytes)
+  Inverted goldcode samples: 2032 (4064 bytes)
+  Total storage: 12192 bytes (11.9 KB)
+  Flash usage: ~11.9KB vs ~406KB (98% reduction!)
+
+Data Sequences:
+  Preamble: 1111111110101010111111111010101011111111101010101111111110101010
+  Payload:  0100101001101111
+
+Normal Goldcode Statistics:
+  Min: 186 (0.150V)
+  Max: 3910 (3.151V)
+  Mean: 2047.9 (1.650V)
+
+Inverted Goldcode Statistics:
+  Min: 186 (0.150V)
+  Max: 3910 (3.151V)
+  Mean: 2047.9 (1.650V)
+
+Implementation Strategy:
+1. Store two goldcode sequences in flash
+2. Use DMA to stream one goldcode at a time
+3. Switch between normal/inverted based on data bit
+4. Use DMA complete callback to load next goldcode
