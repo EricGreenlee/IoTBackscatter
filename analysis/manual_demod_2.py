@@ -205,6 +205,8 @@ def find_sps(samples, goldcode, target_sps, peak_threshold):
     peak_lags = lags[peaks]
     peak_values = corr_mag[peaks]
     
+    first_peak_index = peak_lags[0]
+    
     actual_gc_sps_mean = 0
     actual_gc_sps_sd = 100
     num_peaks = len(peaks)
@@ -236,7 +238,7 @@ def find_sps(samples, goldcode, target_sps, peak_threshold):
     
     plt.tight_layout()
     
-    return actual_gc_sps_mean, actual_gc_sps_sd, num_peaks
+    return actual_gc_sps_mean, actual_gc_sps_sd, num_peaks, first_peak_index
     
 def preamble_search(proc_samples, samplerate_hz, goldcode, target_sps, preamble):
     upsampled_gc = np.repeat(goldcode, target_sps)
@@ -347,7 +349,7 @@ def bin_to_bip_bits(in_bin):
 def sign_correction(in_bits, preamble):
     logger.info(f"in_bits: {in_bits}")
     logger.info(f"preamble: {preamble}")
-    mult_pre_packet= bin_to_bip_bits(in_bits[0:len(preamble)])*bin_to_bip_bits(preamble)
+    mult_pre_packet= bin_to_bip_bits(in_bits[56:len(preamble)])*bin_to_bip_bits(preamble[56:len(preamble)])
     pol = np.mean(mult_pre_packet)
     logger.info(f"pol: {pol},  diff_pre_packet: { mult_pre_packet}")
     
@@ -362,7 +364,7 @@ def demod_cdma_packet(samples, samplerate_hz, cutoff_freq_hz, offset_freq_hz, go
 
     #mix/filter/dc block/AGC
     logger.info(f"mixing to {offset_freq_hz} Hz with cutoff frequency {cutoff_freq_hz} Hz")    
-    proc_samples = mix_filt_DCblock_AGC(samples, offset_freq_hz, samplerate_hz, cutoff_freq_hz)
+    proc_samples = mix_filt_DCblock_AGC(samples, offset_freq_hz, samplerate_hz, cutoff_freq_hz*1.5)
     plt_time_fft(proc_samples, samplerate_hz, title_prefix="long samples functional processing: ")
     
     samples_per_gc_symbol= target_sps*len(goldcode)
@@ -370,13 +372,13 @@ def demod_cdma_packet(samples, samplerate_hz, cutoff_freq_hz, offset_freq_hz, go
     
     #compute SPS and resample
     peak_threshold = 2000
-    actual_gc_sps, actual_gc_sps_sd, num_peaks = find_sps(proc_samples, goldcode, target_sps, peak_threshold)
+    actual_gc_sps, actual_gc_sps_sd, num_peaks, _ = find_sps(proc_samples, goldcode, target_sps, peak_threshold)
     
     if num_peaks != 80:
         logger.warning(f"incorrect number of peaks in packet: {num_peaks}. Should be 80")
         return 0, 0
-    if actual_gc_sps_sd > 5:
-        logger.warning(f"high standard deviation in samplers per symbol: {actual_gc_sps_sd}")
+    if actual_gc_sps_sd > 10:
+        logger.warning(f"high standard deviation in samples per symbol: {actual_gc_sps_sd}")
         return 0, 0
         
     logger.info(f"actual_gc_sps: {actual_gc_sps}")
@@ -385,14 +387,29 @@ def demod_cdma_packet(samples, samplerate_hz, cutoff_freq_hz, offset_freq_hz, go
     proc_samples = signal.resample_poly(proc_samples, int(resamp_rate*10000), 10000)
     
     # #find signal start with preamble corr and grab those samples
+    # preamble_start_index, preamble_sign = preamble_search(proc_samples, samplerate_hz, goldcode, target_sps, preamble)
     
-    preamble_start_index, preamble_sign = preamble_search(proc_samples, samplerate_hz, goldcode, target_sps, preamble)
+    # packet_start_ind = int(preamble_start_index)
+    # packet_stop_ind = int(preamble_start_index+80*samples_per_gc_symbol)
+
+
     
-    packet_start_ind = int(preamble_start_index)
-    packet_stop_ind = int(preamble_start_index+80*samples_per_gc_symbol)
+    #find start index from single goldcode correlation. Run the same function again
+    actual_gc_sps, actual_gc_sps_sd, num_peaks, first_gc_index = find_sps(proc_samples, goldcode, target_sps, peak_threshold)
+    
+    if num_peaks != 80:
+        logger.warning(f"incorrect number of peaks in packet: {num_peaks}. Should be 80")
+        return 0, 0
+    difference_gc_sps = actual_gc_sps-target_sps*len(goldcode)
+    logger.info(f"difference_gc_sps: {difference_gc_sps}")
+    if np.abs(difference_gc_sps) > 10:
+        logger.warning(f"Resampling did not align the sample rates, actual_gc_sps: {actual_gc_sps}; target_sps: {target_sps}")
+        return 0, 0
+    
+    packet_start_ind = int(first_gc_index)
+    packet_stop_ind = int(first_gc_index +80*samples_per_gc_symbol)
 
     proc_samples = proc_samples[packet_start_ind: packet_stop_ind]
-
     
     #despread
     gc_at_target_sps = np.repeat(goldcode, target_sps)
@@ -440,9 +457,10 @@ def demod_cdma_packet(samples, samplerate_hz, cutoff_freq_hz, offset_freq_hz, go
             # Decide based on majority
             proc_bits[i] = 1 if ones_count > zeros_count else 0
     
+    logger.info(f"proc_bits pre correction: {proc_bits}")
     proc_bits = sign_correction(proc_bits, preamble)
 
-    logger.info(f"proc_bits: {proc_bits}")
+    logger.info(f"proc_bits post correction: {proc_bits}")
     payload_bits = proc_bits[64:80]
 
     logger.info(f"sent payload bits: {sent_payload}")
@@ -477,8 +495,10 @@ target_sps = samplerate_hz /chiprate_hz
 num_gcs = len(GCs)
 
 #Read file
-fname = "../python/src/cloud_samples/usrp_n210_20250919_130428_915MHz_1.000Msps_50.0dB_4000000samps.npy" #L053R8 tag (better clock + buffer), 50khz carrier, 80us per bit, proper packet 
+# fname = "../python/src/cloud_samples/usrp_n210_20250919_130428_915MHz_1.000Msps_50.0dB_4000000samps.npy" #L053R8 tag (better clock + buffer), 50khz carrier, 80us per bit, proper packet 
 
+#L053R8 tag (better clock + buffer), 50khz carrier, 80us per bit, proper packet 
+fname = "../python/src/cloud_samples/usrp_n210_20250924_134913_915MHz_1.000Msps_50.0dB_18000000samps.npy"
 
 try:
     samples = np.load(fname)
@@ -495,8 +515,8 @@ num_symbols_jump_first_loop = 2
 
 num_samps_window_first_loop = int(num_symbols_window_first_loop*gc_len*target_sps)
 num_samps_jump_first_loop = int(num_symbols_jump_first_loop*gc_len*target_sps)
-# num_loops = int(np.ceil(len(samples)/num_samps_jump_first_loop))
-num_loops = 80
+num_loops = int(np.ceil(len(samples)/num_samps_jump_first_loop))
+# num_loops = 80
 
 logger.info(f"num_samps_first_loop: {num_samps_window_first_loop}")
 logger.info(f"number of loops: {num_loops}")
@@ -506,8 +526,8 @@ gc_detected = np.zeros([num_loops, num_gcs])
 next_start_ind_gc = np.zeros(num_gcs)
 
 # for start_loop_n in range(num_loops):
-# for start_loop_n in range(31, num_loops):
-for start_loop_n in range(70, num_loops):
+for start_loop_n in range(30, num_loops):
+# for start_loop_n in range(70, num_loops):
     #grab specific samples
     start_samp = int(start_loop_n*num_samps_window_first_loop)
     end_samp = int(start_samp + num_samps_window_first_loop)
@@ -516,7 +536,8 @@ for start_loop_n in range(70, num_loops):
     proc_samples = samples[start_samp:end_samp]
     
     #mix, filter, and AGC
-    offset_freq_hz = -124.5e3
+    # offset_freq_hz = -124.5e3
+    offset_freq_hz = -123.3e3
     proc_samples = mix_filt_DCblock_AGC(proc_samples, offset_freq_hz, samplerate_hz, chiprate_hz*1.5)
 
     # plt_time_fft(proc_samples, samplerate_hz)
@@ -524,7 +545,7 @@ for start_loop_n in range(70, num_loops):
     #test for presence of each goldcode
     for gc_n in range(1):#num_gcs):
         if start_samp >= next_start_ind_gc[gc_n]:
-            max_freq_dev_hz = 500
+            max_freq_dev_hz = 1000
             freq_step_hz = 50
             peak_thresh = 3000
             peak_det, freq_adj_hz = gc_search(proc_samples, GCs[gc_n], samplerate_hz, target_sps,  max_freq_dev_hz, freq_step_hz, peak_thresh)
@@ -559,7 +580,7 @@ for start_loop_n in range(70, num_loops):
         
                 if demod_success:
                     next_start_ind_gc[gc_n] = long_samples_start_ind+36*num_samps_window_first_loop
-                plt.show()
+                # plt.show()
 # logger.info("gc detected:\n%s", np.array2string(gc_detected, threshold=np.inf, max_line_width=np.inf))
 
     

@@ -202,7 +202,7 @@ sample_rate_hz = 1000000
 # fname = "local_samples/usrp_n210_20250912_182742_915MHz_0.248Msps_50.0dB_100000samps.npy" 
 # fname = "local_samples/usrp_n210_20250912_183113_915MHz_0.252Msps_50.0dB_100000samps.npy"#sampled to aim for 10 SPS exactly
 # fname = "local_samples/usrp_n210_20250912_183807_915MHz_1.003Msps_50.0dB_100000samps.npy"
-fname = "local_samples/usrp_n210_20250912_184742_915MHz_1.000Msps_50.0dB_200000samps.npy"
+# fname = "local_samples/usrp_n210_20250912_184742_915MHz_1.000Msps_50.0dB_200000samps.npy"
 # fname = "local_samples/usrp_n210_20250915_175847_915MHz_1.000Msps_50.0dB_200000samps.npy" #uses new arduino code that may be more frequency stable, at 75khz
 # fname = "local_samples/usrp_n210_20250915_183405_915MHz_1.000Msps_50.0dB_200000samps.npy" #stable freq with modulated signal
 # fname = "local_samples/usrp_n210_20250915_184724_915MHz_1.000Msps_50.0dB_1000000samps.npy" #stable freq with modulated signal and sufficient samples
@@ -215,6 +215,8 @@ fname = "local_samples/usrp_n210_20250912_184742_915MHz_1.000Msps_50.0dB_200000s
 # fname = "local_samples/usrp_n210_20250918_141826_915MHz_1.000Msps_50.0dB_2000000samps.npy" #L053R8 tag, 50khz carrier, 80us per bit, preamble and payload all 1's with a break between
 # fname = "local_samples/usrp_n210_20250919_125228_915MHz_1.000Msps_50.0dB_4000000samps.npy" #L053R8 tag (better clock + buffer), 50khz carrier, 80us per bit, packet with all 1's
 # fname = "local_samples/usrp_n210_20250919_130428_915MHz_1.000Msps_50.0dB_4000000samps.npy" #L053R8 tag (better clock + buffer), 50khz carrier, 80us per bit, proper packet 
+fname = "../python/src/cloud_samples/usrp_n210_20250924_134913_915MHz_1.000Msps_50.0dB_18000000samps.npy"
+
 
 try:
     samples = np.load(fname)
@@ -246,8 +248,12 @@ logger.info(f"Dynamic range: {10*np.log10(peak_power/avg_power):.2f} dB")
 
 peak_threshold = 0
 
+proc_samples = samples[0:500000]
+
 # analyze original samples
-fft, fft_db, freqs_hz, peak_freqs_hz, peak_amplitudes_db = plt_fft(samples, sample_rate_hz, "Original - ")
+# fft, fft_db, freqs_hz, peak_freqs_hz, peak_amplitudes_db = plt_fft(samples, sample_rate_hz, "Original - ")
+
+# plt.show()
 
 # zoom plot around a specific frequency range
 # zoom_center_khz = -122  # center frequency for zoom (kHz)
@@ -276,12 +282,12 @@ fft, fft_db, freqs_hz, peak_freqs_hz, peak_amplitudes_db = plt_fft(samples, samp
 
 #mix, filter, and AGC
 # proc_samples = samples[1300000:2200000]
-proc_samples = samples
+# proc_samples = samples
 time_array_sec = np.linspace(0,(len(proc_samples)-1)/sample_rate_hz,len(proc_samples))
-# mix_freq_hz = -124.5e3
-mix_freq_hz = -50e3
-# data_rate_hz = 12500
-data_rate_hz = 25000
+mix_freq_hz = -124.5e3
+# mix_freq_hz = -50e3
+data_rate_hz = 12500
+# data_rate_hz = 25000
 
 
 
@@ -289,7 +295,7 @@ proc_samples = proc_samples*np.exp(-1j*2*np.pi*mix_freq_hz*time_array_sec)
 
 # plt_fft(proc_samples, sample_rate_hz, "Mixed - ")
 
-proc_samples = lpf(proc_samples, data_rate_hz, sample_rate_hz)
+proc_samples = lpf(proc_samples, data_rate_hz*4, sample_rate_hz)
 
 # plt_fft(proc_samples, sample_rate_hz, "Filtered- ")
 
@@ -300,12 +306,14 @@ proc_samples = agc(proc_samples, 1/np.sqrt(2))
 # plt.grid(True)
 # plt.title("time domain of agc'd samples")
 
-plt_fft(proc_samples, sample_rate_hz, "AGC- ",peak_threshold = 80)
+plt_fft(proc_samples, sample_rate_hz, "AGC- ",peak_threshold = 90)
 
-plt.figure()
-plt.plot( proc_samples)
-plt.grid(True)
-plt.title("filtered and AGCd signal")
+# plt.figure()
+# plt.plot( proc_samples)
+# plt.grid(True)
+# plt.title("filtered and AGCd signal")
+
+plt.show()
 
 # analyze time domain peaks on processed samples
 # plt_time_peaks(proc_samples[0:10000], sample_rate_hz, "Processed - ")  # use first 10k samples for visibility
