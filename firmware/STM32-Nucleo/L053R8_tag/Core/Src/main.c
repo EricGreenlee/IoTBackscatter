@@ -295,7 +295,7 @@ int main(void)
 //   }
 // }
 
-// custom clock config to increase the maximum stable DAC rate^
+// custom clock config to increase the maximum stable DAC rate
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
