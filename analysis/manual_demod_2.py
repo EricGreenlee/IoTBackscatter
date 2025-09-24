@@ -111,16 +111,27 @@ def lpf_fir(x: np.ndarray, cutoff_hz: float, fs: float, numtaps: int = 129) -> n
     taps = signal.firwin(numtaps, cutoff_hz, fs=fs)
     return signal.lfilter(taps, [1.0], x)
 
-def mix_filt_DCblock_AGC(in_samples, mix_freq_hz, samplerate_hz, cutoff_freq_hz):
-    #freq shift
-    time_array_sec = np.linspace(0,(len(in_samples)-1)/samplerate_hz,len(proc_samples))
-    mid_samples = proc_samples*np.exp(-1j*2*np.pi*mix_freq_hz*time_array_sec)
-    
+def lpf_iir(samples: np.ndarray, cutoff_hz: float, fs_hz: float, order: int = 5):
     #filter
-    mid_samples = lpf_fir(mid_samples, cutoff_freq_hz, samplerate_hz)
+    b, a = signal.butter(order, cutoff_hz, 'low', fs=fs_hz)
+    out_samples = signal.filtfilt(b, a, samples)
+    return(out_samples)
+
+def mix_filt_DCblock_AGC(in_samples, mix_freq_hz, samplerate_hz, cutoff_freq_hz):
+    
+    mid_samples = in_samples
     
     #dc block
     mid_samples = dc_block(mid_samples)
+    
+    #freq shift
+    time_array_sec = np.linspace(0,(len(mid_samples)-1)/samplerate_hz,len(mid_samples))
+    mid_samples = mid_samples*np.exp(-1j*2*np.pi*mix_freq_hz*time_array_sec)
+    
+    #filter
+    # mid_samples = lpf_fir(mid_samples, cutoff_freq_hz, samplerate_hz, numtaps = 129*2)
+    mid_samples = lpf_iir(mid_samples, cutoff_freq_hz, samplerate_hz)
+
     
     #AGC
     mid_samples = agc_simple(mid_samples)
@@ -180,7 +191,272 @@ def gc_search(samples, goldcode, samplerate_hz, sps, max_freq_dev_hz, freq_step_
     # # logger.info(f"peaks: {peaks}")
     
     # return np.sum(Z > threshold), freq_adj_hz
+    
+def find_sps(samples, goldcode, target_sps, peak_threshold):
+    upsampled_gc = np.repeat(goldcode, target_sps)
+    
+    corr_mag = np.abs(np.correlate(samples, upsampled_gc, mode='valid'))
+    
+    peaks, properties = signal.find_peaks(corr_mag, height= peak_threshold, distance=9000)
+    
+    logger.info(f'peak: {peaks}')
+    
+    lags = np.arange(len(corr_mag))
+    peak_lags = lags[peaks]
+    peak_values = corr_mag[peaks]
+    
+    actual_gc_sps_mean = 0
+    actual_gc_sps_sd = 100
+    num_peaks = len(peaks)
+    
+    # calculate and log differences between consecutive peaks
+    if len(peaks) > 1:
+        peak_diffs = np.diff(peaks)
+        logger.info(f"\nPeak index differences:")
+        for i, diff in enumerate(peak_diffs):
+            logger.info(f"Peak {i+1} to Peak {i+2}: {diff} samples")
+        
+        if len(peak_diffs) > 0:
+            actual_gc_sps_mean = np.mean(peak_diffs)
+            actual_gc_sps_sd = np.std(peak_diffs)
+            
+            logger.info(f"Mean difference: {actual_gc_sps_mean:.1f} samples")
+            logger.info(f"Std deviation: {actual_gc_sps_sd:.1f} samples")            
+            
+      # plot
+    plt.figure(figsize=(12, 6))
+    plt.plot(lags, corr_mag, 'k-', alpha=0.8, label='Magnitude')
+    plt.axhline(y=peak_threshold, color='orange', linestyle=':', label=f'Peak Threshold ({peak_threshold:.4f})')
+    plt.plot(peak_lags, peak_values, 'ro', markersize=8, label=f'Peaks ({len(peaks)} found)')
+    plt.ylabel("Magnitude")
+    plt.xlabel("Lags")
+    plt.legend()
+    plt.grid(True)
+    plt.title(f"Time Domain - Magnitude with Peaks")
+    
+    plt.tight_layout()
+    
+    return actual_gc_sps_mean, actual_gc_sps_sd, num_peaks
+    
+def preamble_search(proc_samples, samplerate_hz, goldcode, target_sps, preamble):
+    upsampled_gc = np.repeat(goldcode, target_sps)
+    
+    preamble_gc_at_sps = np.array([])
+    for i in range(len(preamble)):
+        bit = preamble[i]
+        bit_bpsk = 2 * bit - 1  # Convert 0->-1, 1->+1
+        modulated_chip_seq = upsampled_gc * bit_bpsk
+        preamble_gc_at_sps = np.concatenate([preamble_gc_at_sps, modulated_chip_seq])
+        
+    pre_corr = signal.correlate(proc_samples, preamble_gc_at_sps, mode="valid")
+    pre_corr_mag = np.abs(pre_corr)
+    
+    max_preamble_corr_val= max(pre_corr_mag)
+    max_preamble_corr_ind = np.argmax(pre_corr_mag)
+    max_preamble_corr_sign = np.sign(pre_corr[max_preamble_corr_ind])
+    logger.info(f"max_preamble_corr_val: {max_preamble_corr_val}, max_preamble_corr_ind: {max_preamble_corr_ind}, max_preamble_corr_sign: {max_preamble_corr_sign} ")
+    
+    max_preamble_corr_val_start= max(pre_corr_mag[0:10160*2])
+    max_preamble_corr_ind_start = np.argmax(pre_corr_mag[0:10160*2])
+    max_preamble_corr_sign_start = np.sign(pre_corr[max_preamble_corr_ind_start])
+    logger.info(f"max_preamble_corr_val: {max_preamble_corr_val_start}, max_preamble_corr_ind: {max_preamble_corr_ind_start}, max_preamble_corr_sign: {max_preamble_corr_sign_start} ")
+    
+    
+    plt.figure(figsize=(12, 6))
+    plt.plot(pre_corr_mag)
+    
+    plt.ylabel("Magnitude")
+    plt.xlabel("Lags")
+    plt.grid(True)
+    plt.title(f"Preamble correlation")
+    
+    
+    # return max_preamble_corr_ind, max_preamble_corr_sign
+    return max_preamble_corr_ind_start, max_preamble_corr_sign
 
+def mm_time_recovery(samples, samps_per_symbol):
+    
+    samples_interpolated = signal.resample_poly(samples, 16, 1)
+    mu = 0 # initial estimate of phase of sample
+    out = np.zeros(len(samples) + 10, dtype=np.complex64)
+    out_rail = np.zeros(len(samples) + 10, dtype=np.complex64) # stores values, each iteration we need the previous 2 values plus current value
+    i_in = 0 # input samples index
+    i_out = 2 # output index (let first two outputs be 0)
+    while i_out < len(samples) and i_in+16 < len(samples):
+        # out[i_out] = samples[i_in] # grab what we think is the "best" sample
+        out[i_out] = samples_interpolated[i_in*16 + int(mu*16)]
+        out_rail[i_out] = int(np.real(out[i_out]) > 0) + 1j*int(np.imag(out[i_out]) > 0)
+        x = (out_rail[i_out] - out_rail[i_out-2]) * np.conj(out[i_out-1])
+        y = (out[i_out] - out[i_out-2]) * np.conj(out_rail[i_out-1])
+        mm_val = np.real(y - x)
+        mu += samps_per_symbol + 0.3*mm_val
+        i_in += int(np.floor(mu)) # round down to nearest int since we are using it as an index
+        mu = mu - np.floor(mu) # remove the integer part of mu
+        i_out += 1 # increment output index
+    out = out[2:i_out] # remove the first two, and anything after i_out (that was never filled out)
+    
+    return(out)
+
+def costas_loop(samples, samp_rate):
+    
+    N = len(samples)
+    phase = 0
+    freq = 0
+    # These next two params is what to adjust, to make the feedback loop faster or slower (which impacts stability)
+    alpha = 0.132
+    beta = 0.00932
+    out = np.zeros(N, dtype=np.complex64)
+    freq_log = []
+    for i in range(N):
+        out[i] = samples[i] * np.exp(-1j*phase) # adjust the input sample by the inverse of the estimated phase offset
+        error = np.real(out[i]) * np.imag(out[i]) # This is the error formula for 2nd order Costas Loop (e.g. for BPSK)
+
+        # Advance the loop (recalc phase and freq offset)
+        freq += (beta * error)
+        freq_log.append(freq * samp_rate / (2*np.pi)) # convert from angular velocity to Hz for logging
+        phase += freq + (alpha * error)
+
+        # Optional: Adjust phase so its always between 0 and 2pi, recall that phase wraps around every 2pi
+        while phase >= 2*np.pi:
+            phase -= 2*np.pi
+        while phase < 0:
+            phase += 2*np.pi
+    
+    # plt.figure()
+    # plt.plot(freq_log)
+    # plt.title("Frequency offset from costas loop")
+    # plt.grid("on")
+            
+    return(out)
+
+def demod_bpsk(samples):
+            
+    nbits = len(samples)
+    bits = np.zeros(nbits)
+    for i in range(nbits):
+        bits[i] = int(np.real(samples[i]) > 0)
+        
+    return(bits.astype(int))  
+
+def bip_to_bin_bits(in_bip):
+    return (in_bip+1)/2
+
+def bin_to_bip_bits(in_bin):
+    return in_bin*2-1
+
+def sign_correction(in_bits, preamble):
+    logger.info(f"in_bits: {in_bits}")
+    logger.info(f"preamble: {preamble}")
+    mult_pre_packet= bin_to_bip_bits(in_bits[0:len(preamble)])*bin_to_bip_bits(preamble)
+    pol = np.mean(mult_pre_packet)
+    logger.info(f"pol: {pol},  diff_pre_packet: { mult_pre_packet}")
+    
+    fixed_bits = bip_to_bin_bits(np.sign(pol)*bin_to_bip_bits(in_bits))
+    logger.info(f"fixed_bits: {fixed_bits}")
+    
+    return fixed_bits
+
+    
+
+def demod_cdma_packet(samples, samplerate_hz, cutoff_freq_hz, offset_freq_hz, goldcode, target_sps, preamble):
+
+    #mix/filter/dc block/AGC
+    logger.info(f"mixing to {offset_freq_hz} Hz with cutoff frequency {cutoff_freq_hz} Hz")    
+    proc_samples = mix_filt_DCblock_AGC(samples, offset_freq_hz, samplerate_hz, cutoff_freq_hz)
+    plt_time_fft(proc_samples, samplerate_hz, title_prefix="long samples functional processing: ")
+    
+    samples_per_gc_symbol= target_sps*len(goldcode)
+    logger.info(f"samples_per_gc_symbol: {samples_per_gc_symbol}")
+    
+    #compute SPS and resample
+    peak_threshold = 2000
+    actual_gc_sps, actual_gc_sps_sd, num_peaks = find_sps(proc_samples, goldcode, target_sps, peak_threshold)
+    
+    if num_peaks != 80:
+        logger.warning(f"incorrect number of peaks in packet: {num_peaks}. Should be 80")
+        return 0, 0
+    if actual_gc_sps_sd > 5:
+        logger.warning(f"high standard deviation in samplers per symbol: {actual_gc_sps_sd}")
+        return 0, 0
+        
+    logger.info(f"actual_gc_sps: {actual_gc_sps}")
+    resamp_rate = target_sps*len(GCs[0])/actual_gc_sps
+    logger.info(f"Resamp_rate: {resamp_rate}")
+    proc_samples = signal.resample_poly(proc_samples, int(resamp_rate*10000), 10000)
+    
+    # #find signal start with preamble corr and grab those samples
+    
+    preamble_start_index, preamble_sign = preamble_search(proc_samples, samplerate_hz, goldcode, target_sps, preamble)
+    
+    packet_start_ind = int(preamble_start_index)
+    packet_stop_ind = int(preamble_start_index+80*samples_per_gc_symbol)
+
+    proc_samples = proc_samples[packet_start_ind: packet_stop_ind]
+
+    
+    #despread
+    gc_at_target_sps = np.repeat(goldcode, target_sps)
+    bits_to_calc = 80
+    logger.debug("Expected number of bits: %s", bits_to_calc)
+    samps_per_bit = int(target_sps*127)
+    despread_samples = np.zeros(int(samps_per_bit*bits_to_calc)).astype(np.complex64)
+
+    logger.info(f"samps_per_bit: {samps_per_bit}")
+            
+    for bit in range(bits_to_calc):
+        # print(bit)
+        despread_samples[bit*samps_per_bit:(bit+1)*samps_per_bit] = proc_samples[bit*samps_per_bit:(bit+1)*samps_per_bit]*gc_at_target_sps
+
+    proc_samples = despread_samples
+    plt_time_fft(proc_samples, samplerate_hz, title_prefix = "Despread Samples: ")
+
+
+    #mm timing, costas loop, and bpsk demod
+    
+    proc_samples = mm_time_recovery(proc_samples, target_sps)
+    # plt_time_fft(proc_samples, samplerate_hz, title_prefix = "MM Timing Recovery: ")
+
+    #costas loop
+    # proc_samples = costas_loop(proc_samples, samplerate_hz/127)
+    proc_samples = costas_loop(proc_samples, samplerate_hz)
+    # plt_time_fft(proc_samples, samplerate_hz, title_prefix = "Costas Loop: ")
+
+    #bpsk demod
+    rx_bits_raw = demod_bpsk(proc_samples)
+    logger.info(f"rx_bits_raw: {rx_bits_raw}")
+
+    gc_len = 127
+    nbits_data = 80
+    proc_bits = np.full(nbits_data, np.nan)
+
+    for i in range(nbits_data):
+        start_idx = i * gc_len
+        end_idx = (i + 1) * gc_len-1
+        if end_idx <= len(rx_bits_raw):
+            chunk = rx_bits_raw[start_idx:end_idx]
+            # Count 1s and 0s in the chunk
+            ones_count = np.sum(chunk)
+            zeros_count = len(chunk) - ones_count
+            # Decide based on majority
+            proc_bits[i] = 1 if ones_count > zeros_count else 0
+    
+    proc_bits = sign_correction(proc_bits, preamble)
+
+    logger.info(f"proc_bits: {proc_bits}")
+    payload_bits = proc_bits[64:80]
+
+    logger.info(f"sent payload bits: {sent_payload}")
+    logger.info(f"received payloadbits: {payload_bits}")
+    n_errors = np.sum(np.abs(sent_payload-payload_bits))
+    logger.info(f"# errors: {n_errors}")
+    
+    
+    
+    
+
+
+    # return demod_success, demod_bits
+    return 1, payload_bits
 
 # enable logging
 logger = logging.getLogger("analysis") 
@@ -225,10 +501,13 @@ num_loops = 80
 logger.info(f"num_samps_first_loop: {num_samps_window_first_loop}")
 logger.info(f"number of loops: {num_loops}")
 
-recent_detected_gc = np.ones(num_gcs)
+recent_detected_gc = np.ones([4, num_gcs])
 gc_detected = np.zeros([num_loops, num_gcs])
+next_start_ind_gc = np.zeros(num_gcs)
 
-for start_loop_n in range(num_loops):
+# for start_loop_n in range(num_loops):
+# for start_loop_n in range(31, num_loops):
+for start_loop_n in range(70, num_loops):
     #grab specific samples
     start_samp = int(start_loop_n*num_samps_window_first_loop)
     end_samp = int(start_samp + num_samps_window_first_loop)
@@ -244,21 +523,44 @@ for start_loop_n in range(num_loops):
     
     #test for presence of each goldcode
     for gc_n in range(1):#num_gcs):
-        max_freq_dev_hz = 1000
-        freq_step_hz = 200
-        peak_thresh = 3000
-        peak_det, freq_adj_hz = gc_search(proc_samples, GCs[gc_n], samplerate_hz, target_sps,  max_freq_dev_hz, freq_step_hz, peak_thresh)
+        if start_samp >= next_start_ind_gc[gc_n]:
+            max_freq_dev_hz = 500
+            freq_step_hz = 50
+            peak_thresh = 3000
+            peak_det, freq_adj_hz = gc_search(proc_samples, GCs[gc_n], samplerate_hz, target_sps,  max_freq_dev_hz, freq_step_hz, peak_thresh)
 
-        logger.info(f"recent_detected_gc: {recent_detected_gc}")
-
-        if peak_det and recent_detected_gc[gc_n] == 0:
-            logger.info("demodding")
-            # gc_detected[start_loop_n, gc_n] = 1
-            # break
-        gc_detected[start_loop_n, gc_n] = peak_det
-        recent_detected_gc[gc_n] = peak_det
-    
-logger.info("gc detected:\n%s", np.array2string(gc_detected, threshold=np.inf, max_line_width=np.inf))
+            
+            
+                # gc_detected[start_loop_n, gc_n] = 1
+                # break
+            gc_detected[start_loop_n, gc_n] = peak_det
+            recent_detected_gc[0:3, gc_n] = recent_detected_gc[1:4, gc_n]
+            recent_detected_gc[3,gc_n] = peak_det
+            
+            
+            signal_to_demod = sum(recent_detected_gc[:,gc_n] == [0,0,1,1]) == 4
+            
+            logger.info(f"recent_detected_gc: {recent_detected_gc[:,gc_n]}, signal_to_demod: {signal_to_demod}")
+            
+            if signal_to_demod:
+            # if start_loop_n == 34:
+                logger.info("demodding")
+                
+                #select indexes
+                long_samples_start_ind = int(start_samp- 2*num_samps_window_first_loop)
+                # long_samples_end_ind = long_samples_start_ind + 90*num_samps_window_first_loop
+                long_samples_end_ind = long_samples_start_ind + 24*num_samps_window_first_loop
+                long_samples = samples[long_samples_start_ind:long_samples_end_ind]
+                coarse_offset_freq = offset_freq_hz+freq_adj_hz
+                # coarse_offset_freq = offset_freq_hz+250
+                
+                #send to demod
+                demod_success, demod_bits = demod_cdma_packet(long_samples, samplerate_hz, chiprate_hz*1.5, coarse_offset_freq, GCs[gc_n], target_sps, preamble)
+        
+                if demod_success:
+                    next_start_ind_gc[gc_n] = long_samples_start_ind+36*num_samps_window_first_loop
+                plt.show()
+# logger.info("gc detected:\n%s", np.array2string(gc_detected, threshold=np.inf, max_line_width=np.inf))
 
     
     # plt.show()

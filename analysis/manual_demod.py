@@ -324,7 +324,7 @@ def demod_bpsk(samples):
     return(bits.astype(int))  
 
 #Read file
-fname = "local_samples/usrp_n210_20250919_130428_915MHz_1.000Msps_50.0dB_4000000samps.npy" #L053R8 tag (better clock + buffer), 50khz carrier, 80us per bit, proper packet 
+fname = "../python/src/cloud_samples/usrp_n210_20250919_130428_915MHz_1.000Msps_50.0dB_4000000samps.npy" #L053R8 tag (better clock + buffer), 50khz carrier, 80us per bit, proper packet 
 samplerate_hz = 1000000
 datarate_hz = 25000
 
@@ -413,7 +413,7 @@ proc_samples = proc_samples*np.exp(-1j*2*np.pi*coarse_freq_offset_hz*new_time_ar
 
 gc_corr = signal.correlate(proc_samples, gc_at_target_sps, mode="valid")
 
-# plt_time_peaks(gc_corr, samplerate_hz, f"correlation with goldcode", peak_height=2000, distance = 1000)
+plt_time_peaks(gc_corr, samplerate_hz, f"correlation with goldcode", peak_height=2000, distance = 1000)
 
 sim_pre = np.array([])
 for i in range(64):
