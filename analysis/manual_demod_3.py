@@ -386,24 +386,31 @@ logger.info(f"resamp_rate: {resamp_rate}")
 
 proc_samples = signal.resample_poly(proc_samples, int(resamp_rate*10000), 10000)
 
+#test it again to make sure resampling and rolling worked correctly
 # start_ind, actual_input_gc_sps, num_peaks = get_start_ind_sps(proc_samples, GCs[gc_n], target_sps)
+plt_time_fft(proc_samples, sample_rate_hz=samplerate_hz, title_prefix="Post resampling: ", peak_threshold= 10)
 
-#Downsample to a smaller number of sps
-target_output_sps_chip = 16
-Fs_target = chiprate_hz * target_output_sps_chip
 
-p, q = Fraction(Fs_target / samplerate_hz).limit_denominator(1000).as_integer_ratio()
-proc_samples = signal.resample_poly(proc_samples, p, q)
+# #Downsample to a smaller number of sps
+# target_output_sps_chip = 16
+# Fs_target = chiprate_hz * target_output_sps_chip
 
-logger.info(f"Downsampled to {target_output_sps_chip} samples/chip → {Fs_target:.1f} Hz effective Fs")
+# p, q = Fraction(Fs_target / samplerate_hz).limit_denominator(1000).as_integer_ratio()
+# proc_samples = signal.resample_poly(proc_samples, p, q)
+# samplerate_hz = Fs_target
+
+# logger.info(f"Downsampled to {target_output_sps_chip} samples/chip → {Fs_target:.1f} Hz effective Fs")
+# plt_time_fft(proc_samples, sample_rate_hz=samplerate_hz, title_prefix="Post downsampling: ", peak_threshold= 10)
+
 
 #costas loop for better frequency alignment
-proc_samples = costas_loop_bpsk(proc_samples, fs=chiprate_hz*target_output_sps_chip,loop_bw_hz=300.0)
+proc_samples = costas_loop_bpsk(proc_samples, fs=samplerate_hz,loop_bw_hz=300.0)
 
 #despread
 # Step 3: despread + integrate
+target_output_sps_chip = 80
 sym_samples = despread_and_integrate(proc_samples, GCs[gc_n], target_output_sps_chip)
-plt_time_fft(sym_samples, sample_rate_hz=chiprate_hz*target_output_sps_chip, title_prefix="Post despreading: ", peak_threshold= 1000)
+plt_time_fft(sym_samples, sample_rate_hz=samplerate_hz, title_prefix="Post despreading: ", peak_threshold= 1000)
 
 
 #costas loop
