@@ -238,8 +238,8 @@ def get_start_ind_sps(samples, goldcode, target_sps, peak_threshold = 0.05):
         first_peak_index = peak_lags[0]
         peak_diffs = np.diff(peaks)
         logger.info(f"\nPeak index differences:")
-        for i, diff in enumerate(peak_diffs):
-            logger.info(f"Peak {i+1} to Peak {i+2}: {diff} samples")
+        # for i, diff in enumerate(peak_diffs):
+        #     logger.info(f"Peak {i+1} to Peak {i+2}: {diff} samples")
         
         if len(peak_diffs) > 0:
             actual_gc_sps_mean = np.mean(peak_diffs)
@@ -501,6 +501,11 @@ def bip_to_bin_bits(in_bip):
 def bin_to_bip_bits(in_bin):
     return in_bin*2-1
 
+def estimate_snr(sig):
+    power = np.mean(np.abs(sig)**2)
+    noise = np.var(sig - np.mean(sig))
+    return 10*np.log10(power/noise)
+
 
 #L053R8 tag (better clock + buffer), 50khz carrier, 80us per bit, proper packet 
 fname = "../python/src/cloud_samples/usrp_n210_20250924_134913_915MHz_1.000Msps_50.0dB_18000000samps.npy"
@@ -558,6 +563,8 @@ logger.info(f"GC found? {gc_found} | fine CFO: {fine_cfo_hz:+.1f} Hz")
 proc = mix(proc, fine_cfo_hz, samplerate_hz)
 logger.info(f"Applied fine CFO mix {fine_cfo_hz:+.1f} Hz")
 
+# print("Pre-resample SNR:", estimate_snr(proc))
+
 # 6) Use GC correlation to find start index and the actual samples-per-GC spacing
 start_ind, actual_input_gc_sps, num_peaks = get_start_ind_sps(proc, GCs[gc_n], target_sps)
 logger.info(f"Start index: {start_ind} | Measured samples/GC: {actual_input_gc_sps:.2f} | peaks: {num_peaks}")
@@ -565,105 +572,132 @@ logger.info(f"Start index: {start_ind} | Measured samples/GC: {actual_input_gc_s
 # Trim to a packet region beginning at the best boundary (grab ~80 GCs like before)
 # Keep enough samples to survive resampling margins
 chips_per_packet = 80 * gc_len
-buffer_nsamps = 80*100
+buffer_nsamps = 80*200
+
 want_input_samps = int(np.ceil(chips_per_packet * (actual_input_gc_sps / gc_len)))+buffer_nsamps
-proc = proc[start_ind : start_ind + want_input_samps]
-logger.info(f"Trimmed to packet region: {len(proc)} samples")
 
-plt_time_fft(proc, sample_rate_hz=samplerate_hz, title_prefix="Post trimming: ", peak_threshold= 10)
+checkpoint_samps = proc
+
+for samp_offset in [0]:#[-2,-1,0,1,2]:
+    logger.info(f"samp_offset: {samp_offset}")
+    
+    proc = checkpoint_samps[start_ind +samp_offset: start_ind+ samp_offset + want_input_samps]
+    logger.info(f"Trimmed to packet region: {len(proc)} samples")
+
+    # plt_time_fft(proc, sample_rate_hz=samplerate_hz, title_prefix="Post trimming: ", peak_threshold= 10)
+
+    # plt.figure()
+    # plt.plot(np.real(proc), np.imag(proc), '.')
+    # plt.title("constellation after trimming")
+    # plt.grid(True)
 
 
-# 7) Resample to target 2 samples/chip (better for Gardner/Costas)
-target_sps_per_chip = 2.0
-up, down = desired_resample_up_down(actual_input_gc_sps, target_sps_per_chip, gc_len)
-proc = signal.resample_poly(proc, up, down)
-fs_after = samplerate_hz * (up / down)
-logger.info(f"Resampled with up={up}, down={down} → fs={fs_after:.1f} Hz; ~{fs_after/chiprate_hz:.2f} sps/chip")
+    # 7) Resample to target 2 samples/chip (better for Gardner/Costas)
+    target_sps_per_chip = 2.0
+    # target_sps_per_chip = 8.0
+    up, down = desired_resample_up_down(actual_input_gc_sps, target_sps_per_chip, gc_len)
+    proc = signal.resample_poly(proc, up, down)
+    fs_after = samplerate_hz * (up / down)
+    logger.info(f"Resampled with up={up}, down={down} → fs={fs_after:.1f} Hz; ~{fs_after/chiprate_hz:.2f} sps/chip")
+    
+    # fs_after = samplerate_hz/40
+    # proc = signal.decimate(proc, 40, ftype="fir", zero_phase=True)
 
-plt_time_fft(proc, sample_rate_hz=fs_after, title_prefix="Post resampling: ", peak_threshold= 10)
+    # plt_time_fft(proc, sample_rate_hz=fs_after, title_prefix="Post resampling: ", peak_threshold= 10)
+    # print("Post-resample SNR:", estimate_snr(proc))
 
 
-# 8) (Optional) light FIR to clean any resampling images (cut around 0.45*chiprate)
-proc = lpf_fir(proc, fs_after, cutoff_hz=0.45*chiprate_hz)
+    # 8) (Optional) light FIR to clean any resampling images (cut around 0.45*chiprate)
+    proc = lpf_fir(proc, fs_after, cutoff_hz=0.45*chiprate_hz)
 
-# 9) AGC now that BW and rate are low (stable loops)
-proc = rms_agc(proc, target_rms=1.0, attack=0.02, decay=0.002)
+    # 9) AGC now that BW and rate are low (stable loops)
+    proc = rms_agc(proc, target_rms=1.0, attack=0.02, decay=0.002)
 
-# 10) Carrier recovery (Costas) BEFORE timing; BW ≈ 0.5–1% of chiprate
-proc = costas_loop_bpsk(proc, fs_after, loop_bw_hz=100.0, zeta=0.707)
+    # 10) Carrier recovery (Costas) BEFORE timing; BW ≈ 0.5–1% of chiprate
+    proc = costas_loop_bpsk(proc, fs_after, loop_bw_hz=100.0, zeta=0.707)
 
-# 11) Timing recovery (Gardner at exactly 2 sps) → ~1 sample per chip, centered
-proc = gardner_2sps(proc, gain=0.02)
+    plt.figure()
+    plt.plot(np.real(proc), np.imag(proc), '.')
+    plt.title(f"constellation after costas loop, sample offset: {samp_offset}")
+    plt.grid(True)
 
-# 12) Matched filter / integrate-and-dump (1 chip/symbol here) → hard decisions
-chips_cx = integrate_and_dump(proc, sps=1)
-raw_chip_bits = hard_bits(chips_cx)
-logger.info(f"Recovered {len(raw_chip_bits)} raw chip bits at ≈{chiprate_hz:.1f} chips/s")
+    # 11) Timing recovery (Gardner at exactly 2 sps) → ~1 sample per chip, centered
+    proc = gardner_2sps(proc, gain=0.02)
 
-# 13) Optional: GC-only correlation for alignment sanity (no despreading)
-gc_pm = GCs[gc_n].astype(np.float32)  # ±1
-c = signal.correlate(2*raw_chip_bits-1, gc_pm, mode='valid', method='fft')
+    # 12) Matched filter / integrate-and-dump (1 chip/symbol here) → hard decisions
+    chips_cx = integrate_and_dump(proc, sps=1)
+    raw_chip_bits = hard_bits(chips_cx)
+    logger.info(f"Recovered {len(raw_chip_bits)} raw chip bits at ≈{chiprate_hz:.1f} chips/s")
 
-plt_time_fft(np.real(c), sample_rate_hz=chiprate_hz, title_prefix="bit correlation with goldcode : ", peak_threshold= 10)
+    # 13) Optional: GC-only correlation for alignment sanity (no despreading)
+    gc_pm = GCs[gc_n].astype(np.float32)  # ±1
+    c = signal.correlate(2*raw_chip_bits-1, gc_pm, mode='valid', method='fft')
 
-peaks, _ = signal.find_peaks(np.abs(c), height = gc_len/2)
-# (fft_db, height=peak_threshold, prominence=5, distance=10)
+    plt_time_fft(np.real(c), sample_rate_hz=chiprate_hz, title_prefix="bit correlation with goldcode : ", peak_threshold= 10)
 
-logger.info(f"peaks: {peaks}")
+    peaks, _ = signal.find_peaks(np.abs(c), height = gc_len/2)
+    # (fft_db, height=peak_threshold, prominence=5, distance=10)
 
-# packet_start_ind = peaks[0]
+    logger.info(f"peaks: {peaks}")
 
-# gc_boundary = np.argmax(np.abs(c))
-gc_boundary_start = 32
-gc_boundary_start = peaks[0]
-logger.info(f"Likely GC boundary in raw chips at index {gc_boundary_start}")
-# logger.info(f"Raw chip bits @boundary: {bin_to_bip_bits(raw_chip_bits[gc_boundary:gc_boundary+gc_len])}")
-# logger.info(f"Goldcode: {GCs[0]}")
+    # packet_start_ind = peaks[0]
 
-for i in range(80):
-    gc_boundary = gc_boundary_start+i*gc_len
-    tx_rx_dif = GCs[0]+bin_to_bip_bits(raw_chip_bits[gc_boundary:gc_boundary+gc_len])
-    num_errors = min(np.sum(np.abs(tx_rx_dif)/2),127-np.sum(np.abs(tx_rx_dif)/2))
-    # logger.info(f"difference: {tx_rx_dif}")
-    logger.info(f"gc symbol: {i}, num_errors: {num_errors}")
+    # gc_boundary = np.argmax(np.abs(c))
+    gc_boundary_start = 32
+    gc_boundary_start = peaks[0]
+    logger.info(f"Likely GC boundary in raw chips at index {gc_boundary_start}")
+    # logger.info(f"Raw chip bits @boundary: {bin_to_bip_bits(raw_chip_bits[gc_boundary:gc_boundary+gc_len])}")
+    # logger.info(f"Goldcode: {GCs[0]}")
 
-# --- Chip-level BER across the whole spread BPSK packet ---
+    tot_errors = 0
+    for i in range(80):
+        gc_boundary = gc_boundary_start+i*gc_len
+        tx_rx_dif = GCs[0]+bin_to_bip_bits(raw_chip_bits[gc_boundary:gc_boundary+gc_len])
+        num_errors = min(np.sum(np.abs(tx_rx_dif)/2),127-np.sum(np.abs(tx_rx_dif)/2))
+        # logger.info(f"difference: {tx_rx_dif}")
+        logger.info(f"gc symbol: {i}, num_errors: {num_errors}")
+        tot_errors = tot_errors+num_errors
+        
+    logger.info(f"total_errors: {tot_errors}")
+    logger.info(f"BER: {tot_errors/(80*gc_len)}")
 
-# Build transmitted chip sequence
-tx_bits = np.concatenate([preamble, sent_payload])
-tx_chips = []
-gc = GCs[gc_n].astype(int)  # ±1 sequence
+    # --- Chip-level BER across the whole spread BPSK packet ---
 
-for b in tx_bits:
-    symbol_chips = gc * (1 if b == 1 else -1)  # BPSK spreading
-    tx_chips.append(symbol_chips)
+    # Build transmitted chip sequence
+    tx_bits = np.concatenate([preamble, sent_payload])
+    tx_chips = []
+    gc = GCs[gc_n].astype(int)  # ±1 sequence
 
-tx_chips = np.concatenate(tx_chips)  # length = 80*127 = 10160
+    for b in tx_bits:
+        symbol_chips = gc * (1 if b == 1 else -1)  # BPSK spreading
+        tx_chips.append(symbol_chips)
 
-# Align RX to boundary before comparison
-gc_boundary = gc_boundary_start
-rx_chips = raw_chip_bits[gc_boundary : gc_boundary + len(tx_chips)]
+    tx_chips = np.concatenate(tx_chips)  # length = 80*127 = 10160
 
-# Make sure lengths match
-min_len = min(len(rx_chips), len(tx_chips))
-rx_chips = rx_chips[:min_len]
-tx_chips = tx_chips[:min_len]
+    # Align RX to boundary before comparison
+    gc_boundary = gc_boundary_start
+    rx_chips = raw_chip_bits[gc_boundary : gc_boundary + len(tx_chips)]
 
-# Compute BER
-chip_errors = np.sum(rx_chips != bip_to_bin_bits(tx_chips))
-chip_ber = min(chip_errors,min_len-chip_errors) / min_len
+    # Make sure lengths match
+    min_len = min(len(rx_chips), len(tx_chips))
+    rx_chips = rx_chips[:min_len]
+    tx_chips = tx_chips[:min_len]
 
-# plt.figure()
-# plt.plot(rx_chips, label= "rx_chips")
-# plt.plot(bip_to_bin_bits(-1*tx_chips)+2, label= "inverted tx_chips")
-# plt.plot(bip_to_bin_bits(tx_chips)-2, label= "tx_chips")
-# plt.grid(True)
-# plt.legend()
+    # Compute BER
+    chip_errors = np.sum(rx_chips != bip_to_bin_bits(tx_chips))
+    chip_ber = min(chip_errors,min_len-chip_errors) / min_len
 
-logger.info(f"--- Chip-level BER ---")
-logger.info(f"Compared {min_len} chips")
-logger.info(f"Errors: {chip_errors}")
-logger.info(f"BER: {chip_ber:.3e}")
+    # plt.figure()
+    # plt.plot(rx_chips, label= "rx_chips")
+    # plt.plot(bip_to_bin_bits(-1*tx_chips)+2, label= "inverted tx_chips")
+    # plt.plot(bip_to_bin_bits(tx_chips)-2, label= "tx_chips")
+    # plt.grid(True)
+    # plt.legend()
+
+    logger.info(f"--- Chip-level BER ---")
+    logger.info(f"Compared {min_len} chips")
+    logger.info(f"Errors: {chip_errors}")
+    logger.info(f"BER: {chip_ber:.3e}")
 
 
 #plot with easy closing
