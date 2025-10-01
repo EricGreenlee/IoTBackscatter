@@ -3,3 +3,4 @@ GC0 from stm32v0 at close range (~40cm), 2-3 periods, packet {0, 1, 0, 0, 1, 0, 
 GC0 from stm32v0 at close range (~40cm), 11 periods, packet {0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1}: usrp_n210_20250924_134913_915MHz_1.000Msps_50.0dB_18000000samps.npy
 GC1 from stm32v0 at close range (~40cm), 11 periods, packet {0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1}: usrp_n210_20250924_141012_915MHz_1.000Msps_50.0dB_18000000samps.npy
 GC0 from stm32v0 at mid range (~210cm), 11 periods, packet {0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1}: usrp_n210_20250924_141416_915MHz_1.000Msps_50.0dB_18000000samps.npy
+GC0 from stm32v0 at close range (~40cm), 100kHz carrier wave, 25kbps, 6 periods, packet {0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1} : usrp_n210_20251001_194714_915MHz_0.200Msps_38.0dB_1000000samps.npy
