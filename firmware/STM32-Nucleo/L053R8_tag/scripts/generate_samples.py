@@ -51,6 +51,7 @@ def generate_cdma_samples():
     normal_goldcode_samples = []
     inverted_goldcode_samples = []
     break_samples = []
+    sinusoid_samples = []
     
     print(f"Generating optimized CDMA goldcode samples...")
     print(f"Strategy: Store 2 goldcode sequences, select based on data bit polarity")
@@ -91,22 +92,22 @@ def generate_cdma_samples():
             dac_value = max(0, min(DAC_MAX, dac_value))
             inverted_goldcode_samples.append(dac_value)
             
-    # Generate normal goldcode samples (for data bit = 1)
-    print("Generating normal goldcode (for data bit '1')...")
-    for chip_idx, goldcode_chip in enumerate(goldcode):
-        # Normal goldcode: use chip as-is
-        modulated_chip = goldcode_chip
-        phase_offset = 0.0 if modulated_chip == 1 else math.pi
+    # # Generate normal goldcode samples (for data bit = 1)
+    # print("Generating normal goldcode (for data bit '1')...")
+    # for chip_idx, goldcode_chip in enumerate(goldcode):
+    #     # Normal goldcode: use chip as-is
+    #     modulated_chip = goldcode_chip
+    #     phase_offset = 0.0 if modulated_chip == 1 else math.pi
         
-        # Generate samples for this chip
-        for sample_idx in range(SAMPLES_PER_BIT):
-            phase = (sample_idx % SAMPLES_PER_CYCLE) * (2.0 * math.pi / SAMPLES_PER_CYCLE)
-            phase += phase_offset
+    #     # Generate samples for this chip
+    #     for sample_idx in range(SAMPLES_PER_BIT):
+    #         phase = (sample_idx % SAMPLES_PER_CYCLE) * (2.0 * math.pi / SAMPLES_PER_CYCLE)
+    #         phase += phase_offset
             
-            sine_val = math.sin(phase)
-            dac_value = int(2048 + (sine_val * 1862))
-            dac_value = max(0, min(DAC_MAX, dac_value))
-            normal_goldcode_samples.append(dac_value)
+    #         sine_val = math.sin(phase)
+    #         dac_value = int(2048 + (sine_val * 1862))
+    #         dac_value = max(0, min(DAC_MAX, dac_value))
+            # normal_goldcode_samples.append(dac_value)
             
     # Generate normal goldcode samples (for data bit = 1)
     print("Generating DC for when taking a break...")
@@ -125,6 +126,40 @@ def generate_cdma_samples():
             # dac_value = int(2048 + (sine_val * 1862))
             # dac_value = max(0, min(DAC_MAX, dac_value))
             break_samples.append(DC_val)
+            
+     # Generate normal goldcode samples (for data bit = 1)
+    print("Generating sinusoid for test ...")
+    for chip_idx, goldcode_chip in enumerate(goldcode):
+        # Normal goldcode: use chip as-is
+        modulated_chip = goldcode_chip
+        phase_offset = 0.0 if modulated_chip == 1 else math.pi
+        
+        # Generate samples for this chip
+        for sample_idx in range(SAMPLES_PER_BIT):
+            phase = (sample_idx % SAMPLES_PER_CYCLE) * (2.0 * math.pi / SAMPLES_PER_CYCLE)
+            # phase += phase_offset
+            
+            sine_val = math.sin(phase)
+            dac_value = int(2048 + (sine_val * 1862))
+            dac_value = max(0, min(DAC_MAX, dac_value))
+            sinusoid_samples.append(dac_value)
+            
+    print("Generating alternating signal for test ...")
+    alternating_samples = []
+    for chip_idx, goldcode_chip in enumerate(goldcode):
+        # Normal goldcode: use chip as-is
+        modulated_chip = goldcode_chip
+        phase_offset = 0.0 if modulated_chip == 1 else math.pi
+        
+        # Generate samples for this chip
+        for sample_idx in range(SAMPLES_PER_BIT):
+            # phase = (sample_idx % SAMPLES_PER_CYCLE) * (2.0 * math.pi / SAMPLES_PER_CYCLE)
+            # phase += phase_offset
+            
+            # sine_val = math.sin(phase)
+            # dac_value = int(2048 + (sine_val * 1862))
+            dac_value = (sample_idx%2)*2048
+            alternating_samples.append(dac_value)
     
     samples_per_goldcode = len(normal_goldcode_samples)
     total_storage = samples_per_goldcode * 2  # Two sequences
@@ -140,7 +175,7 @@ def generate_cdma_samples():
     print(f"Goldcode time: {goldcode_time_ms:.2f} ms")
     print(f"Full frame: {total_data_bits} bits × {goldcode_time_ms:.2f}ms = {frame_time_ms:.2f} ms")
     
-    return normal_goldcode_samples, inverted_goldcode_samples, break_samples
+    return normal_goldcode_samples, inverted_goldcode_samples, break_samples, sinusoid_samples, alternating_samples
     
     # # Combine preamble and payload
     # data_bits = preamble + payload
@@ -189,7 +224,7 @@ def generate_cdma_samples():
     
     # return samples
 
-def write_header_file(normal_samples, inverted_samples, break_samples, filename="precomputed_samples.h"):
+def write_header_file(normal_samples, inverted_samples, break_samples, sinusoid_samples, alternating_samples, filename="precomputed_samples.h"):
     """Write goldcode samples to C header file"""
     
     filename = "scripts/precomputed_samples/"+filename
@@ -318,6 +353,52 @@ def write_header_file(normal_samples, inverted_samples, break_samples, filename=
             
         f.write("};\n\n")
         
+        #write sinusoid samples
+        f.write("/* Sinusoid samples - stored in flash */\n")
+        f.write("const uint16_t sinusoid_samples[] = {\n")
+        
+        for i, sample in enumerate(sinusoid_samples):
+            if i % 16 == 0:
+                f.write("    ")
+            
+            f.write(f"{sample:4d}")
+            
+            if i < len(sinusoid_samples) - 1:
+                f.write(",")
+                
+            if i % 16 == 15:
+                f.write("\n")
+            elif i < len(sinusoid_samples) - 1:
+                f.write(" ")
+        
+        if len(sinusoid_samples) % 16 != 0:
+            f.write("\n")
+            
+        f.write("};\n\n")
+        
+        #write alternating samples
+        f.write("/* Alternating samples - stored in flash */\n")
+        f.write("const uint16_t alternating_samples[] = {\n")
+        
+        for i, sample in enumerate(alternating_samples):
+            if i % 16 == 0:
+                f.write("    ")
+            
+            f.write(f"{sample:4d}")
+            
+            if i < len(alternating_samples) - 1:
+                f.write(",")
+                
+            if i % 16 == 15:
+                f.write("\n")
+            elif i < len(alternating_samples) - 1:
+                f.write(" ")
+        
+        if len(alternating_samples) % 16 != 0:
+            f.write("\n")
+            
+        f.write("};\n\n")
+        
         # Helper macro for selecting samples based on bit value
         f.write("/* Helper macro to select goldcode based on data bit */\n")
         f.write("#define GET_GOLDCODE_SAMPLES(bit) ((bit) ? normal_goldcode_samples : inverted_goldcode_samples)\n\n")
@@ -392,11 +473,11 @@ if __name__ == "__main__":
     print("=" * 40)
     
     # Generate goldcode samples
-    normal_samples, inverted_samples, break_samples = generate_cdma_samples()
+    normal_samples, inverted_samples, break_samples, sinusoid_samples, alternating_samples = generate_cdma_samples()
     
     # Write header file
     fname = f"precomputed_samples_GC{device_id}.h"
-    write_header_file(normal_samples, inverted_samples, break_samples, filename = fname)
+    write_header_file(normal_samples, inverted_samples, break_samples, sinusoid_samples, alternating_samples, filename = fname)
     
     # Write debug info
     write_debug_info(normal_samples, inverted_samples, break_samples)

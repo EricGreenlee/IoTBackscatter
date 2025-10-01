@@ -217,6 +217,7 @@ def get_start_ind_sps(samples, goldcode, target_sps, peak_threshold = 0.05):
         signal.correlate(np.abs(samples)**2, np.ones(gc_sps_len ), mode="valid") * gc_energy
     )
     corr_mag = np.abs(numer)**2 / (denom**2 + 1e-20)
+    corr_val = numer/np.abs(denom+ 1e-20)
         # Z[j, :] = gamma
         
     peaks, properties = signal.find_peaks(corr_mag, height= peak_threshold, distance=int(gc_sps_len*.5))
@@ -250,6 +251,7 @@ def get_start_ind_sps(samples, goldcode, target_sps, peak_threshold = 0.05):
             
       # plot
     plt.figure(figsize=(12, 6))
+    plt.subplot(2,1,1)
     plt.plot(lags, corr_mag, 'k-', alpha=0.8, label='Magnitude')
     plt.axhline(y=peak_threshold, color='orange', linestyle=':', label=f'Peak Threshold ({peak_threshold:.4f})')
     plt.plot(peak_lags, peak_values, 'ro', markersize=8, label=f'Peaks ({len(peaks)} found)')
@@ -259,6 +261,14 @@ def get_start_ind_sps(samples, goldcode, target_sps, peak_threshold = 0.05):
     plt.grid(True)
     plt.title(f"Time Domain - Magnitude with Peaks")
     
+    plt.subplot(2,1,2)
+    plt.plot(lags, np.real(corr_val), '-', alpha=0.8, label='Real Values')
+    plt.plot(lags, np.imag(corr_val), '-', alpha=0.8, label='Imag Values')
+    plt.legend()
+    plt.grid(True)
+    plt.title(f"Time Domain - Real and image with Peaks")
+    plt.ylabel("Amplitude")
+    plt.xlabel("Lags")
     plt.tight_layout()
     # logger.info(f"freq index of max correlation: {max_corr_idx[0]}, corresponding freq_adj_hz: {freq_adj_hz}")
     
@@ -507,8 +517,11 @@ def estimate_snr(sig):
     return 10*np.log10(power/noise)
 
 
-#L053R8 tag (better clock + buffer), 50khz carrier, 80us per bit, proper packet 
-fname = "../python/src/cloud_samples/usrp_n210_20250924_134913_915MHz_1.000Msps_50.0dB_18000000samps.npy"
+#L053R8 tag (better clock + buffer), 50khz carrier, 80us per bit, proper packet, 0.4m away, GC0
+# fname = "../python/src/cloud_samples/usrp_n210_20250924_134913_915MHz_1.000Msps_50.0dB_18000000samps.npy"
+
+#L053R8 tag (better clock + buffer), 50khz carrier, 80us per bit, proper packet, 2m away, GC0
+fname = "../python/src/cloud_samples/usrp_n210_20250924_141416_915MHz_1.000Msps_50.0dB_18000000samps.npy"
 
 try:
     samples = np.load(fname)
@@ -522,7 +535,7 @@ except Exception as e:
 target_input_sps = 80
 gc_n = 0
 
-start_index = 1219200 #+ 10*gc_len*target_input_sps
+start_index = 1220000 + 1*80*gc_len*target_input_sps
 stop_index = start_index + 100*gc_len*target_input_sps
 # stop_index = start_index + 10*gc_len*target_input_sps
 
@@ -532,10 +545,13 @@ stop_index = start_index + 100*gc_len*target_input_sps
 # --- simplified raw-chip demod path (no despreading) ---
 
 proc = samples[start_index:stop_index]
-logger.info(f"Initial slice: {len(proc)} samples")
+logger.info(f"Initial slice: {len(proc)} samples starting at index {start_index}")
+
+plt_time_fft(proc, sample_rate_hz=samplerate_hz, title_prefix="Pre processing: ", peak_threshold= 10)
+
 
 # 3) DC block (light) BEFORE correlation so DC won’t bias the normalized metric
-proc = dc_block_iir(proc, r=0.995)
+# proc = dc_block_iir(proc, r=0.995)
 
 # 1) Mix to rough center (bring near baseband)
 offset_freq_hz = -123.3e3
@@ -544,6 +560,11 @@ logger.info(f"Mixed to {offset_freq_hz:+.1f} Hz")
 
 # 2) Narrow LPF ~1.2–1.5 × chiprate (keep spectrum, reject close interferers)
 proc = lpf_iir(proc, cutoff_hz=chiprate_hz*1.5, fs_hz=samplerate_hz, order=5)
+
+plt_time_fft(proc, sample_rate_hz=samplerate_hz, title_prefix="Post filter: ", peak_threshold= 10)
+
+
+
 
 # # 3) DC block (light) BEFORE correlation so DC won’t bias the normalized metric
 # proc = dc_block_iir(proc, r=0.995)
@@ -558,6 +579,8 @@ gc_found, fine_cfo_hz = normalized_gc_search(
     max_freq_dev_hz, freq_step_hz, peak_thresh
 )
 logger.info(f"GC found? {gc_found} | fine CFO: {fine_cfo_hz:+.1f} Hz")
+
+plt.show()
 
 # 5) Apply fine CFO correction on the full region
 proc = mix(proc, fine_cfo_hz, samplerate_hz)
@@ -629,22 +652,27 @@ for samp_offset in [0]:#[-2,-1,0,1,2]:
     raw_chip_bits = hard_bits(chips_cx)
     logger.info(f"Recovered {len(raw_chip_bits)} raw chip bits at ≈{chiprate_hz:.1f} chips/s")
 
+
+    _, _, _ = get_start_ind_sps(2*raw_chip_bits-1, GCs[gc_n], 1)
+
     # 13) Optional: GC-only correlation for alignment sanity (no despreading)
-    gc_pm = GCs[gc_n].astype(np.float32)  # ±1
-    c = signal.correlate(2*raw_chip_bits-1, gc_pm, mode='valid', method='fft')
+    # gc_pm = GCs[gc_n].astype(np.float32)  # ±1
+    # c = signal.correlate(2*raw_chip_bits-1, gc_pm, mode='valid', method='fft')
 
-    plt_time_fft(np.real(c), sample_rate_hz=chiprate_hz, title_prefix="bit correlation with goldcode : ", peak_threshold= 10)
+    # plt_time_fft(np.real(c), sample_rate_hz=chiprate_hz, title_prefix="bit correlation with goldcode : ", peak_threshold= 10)
 
-    peaks, _ = signal.find_peaks(np.abs(c), height = gc_len/2)
+    # peaks, _ = signal.find_peaks(np.abs(c), height = gc_len/2)
     # (fft_db, height=peak_threshold, prominence=5, distance=10)
 
-    logger.info(f"peaks: {peaks}")
+    # logger.info(f"peaks: {peaks}")
+    
+    
 
     # packet_start_ind = peaks[0]
 
     # gc_boundary = np.argmax(np.abs(c))
     gc_boundary_start = 32
-    gc_boundary_start = peaks[0]
+    # gc_boundary_start = peaks[0]
     logger.info(f"Likely GC boundary in raw chips at index {gc_boundary_start}")
     # logger.info(f"Raw chip bits @boundary: {bin_to_bip_bits(raw_chip_bits[gc_boundary:gc_boundary+gc_len])}")
     # logger.info(f"Goldcode: {GCs[0]}")

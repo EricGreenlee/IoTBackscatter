@@ -10,21 +10,21 @@ Signal Parameters:
 
 Goldcode:
   Length: 127 chips
-  Samples per goldcode: 4064
-  Goldcode time: 20.32 ms
+  Samples per goldcode: 2032
+  Goldcode time: 10.16 ms
 
 Frame Structure:
   Preamble: 64 bits
   Payload: 16 bits
   Total Data Bits: 80
-  Frame Time: 1625.60 ms
+  Frame Time: 812.80 ms
 
 Storage Optimization:
   Strategy: Store 2 goldcode sequences, select based on bit polarity
-  Normal goldcode samples: 4064 (8128 bytes)
+  Normal goldcode samples: 2032 (4064 bytes)
   Inverted goldcode samples: 2032 (4064 bytes)
-  Total storage: 12192 bytes (11.9 KB)
-  Flash usage: ~11.9KB vs ~406KB (98% reduction!)
+  Total storage: 8128 bytes (7.9 KB)
+  Flash usage: ~7.9KB vs ~406KB (98% reduction!)
 
 Data Sequences:
   Preamble: 1111111110101010111111111010101011111111101010101111111110101010

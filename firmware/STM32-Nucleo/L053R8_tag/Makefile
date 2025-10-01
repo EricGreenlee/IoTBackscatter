@@ -41,6 +41,8 @@ Core/Src/stm32l0xx_it.c \
 Core/Src/stm32l0xx_hal_msp.c \
 Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_dac.c \
 Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_dac_ex.c \
+Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_adc.c \
+Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_adc_ex.c \
 Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal.c \
 Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_i2c.c \
 Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_i2c_ex.c \

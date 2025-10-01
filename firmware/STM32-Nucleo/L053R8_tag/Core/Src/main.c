@@ -24,7 +24,10 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include "stm32l0xx_hal_i2c.h"
+#include "stm32l0xx_hal_adc.h"
 #include "precomputed_samples_GC0.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -35,12 +38,14 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 // === Streaming parameters ===
-#define SAMPLE_RATE 200000 // 200 ksps DAC update rate
+// #define SAMPLE_RATE 200000 // 200 ksps DAC update rate
+#define SAMPLE_RATE 400000 // 400 ksps DAC update rate
 #define CARRIER_SAMPLES 4  // 4 samples per 50 kHz cycle
 #define GOLD_LEN 127
 #define SYMBOL_SAMPLES (GOLD_LEN * 16) // 2032 samples per encoded bit
 #define BUF_SAMPLES 2048               // DMA circular buffer (2 halves)
 #define HALF_SAMPLES (BUF_SAMPLES / 2) // 1024 per half
+// #define IDLE_BITS 80
 #define IDLE_BITS 80
 
 const int preamble[64] = {
@@ -99,6 +104,9 @@ UART_HandleTypeDef huart2;
 // Sine wave data buffer
 // uint16_t sine_wave[SAMPLES];
 DMA_HandleTypeDef hdma_dac_ch1; // Moved here to protect from CubeMX regeneration
+
+// I2C_HandleTypeDef hi2c1;
+// ADC_HandleTypeDef hadc;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -121,6 +129,17 @@ static void BuildPacket(void);
 static void FillHalf(int half_index);
 static void restart_packet_stream(void);
 static void enter_idle(void);
+
+// void MX_I2C1_Init(void); // === NEW
+// void MX_ADC_Init(void);  // === NEW
+
+// // === NEW: helpers
+// int I2C_ReadRegs(uint16_t dev7b, uint8_t reg, uint8_t *data, uint16_t len);
+// int I2C_WriteRegs(uint16_t dev7b, uint8_t reg, const uint8_t *data, uint16_t len);
+// uint16_t ADC_ReadRaw(uint32_t channel);
+// uint32_t Read_Vref_mV(void);
+// uint32_t ADC_Channel_mV(uint32_t channel, uint32_t vref_mV);
+// float Divider_InputVoltage_V(float vout_mV, float Rhigh_ohm, float Rlow_ohm);
 
 /* USER CODE END PFP */
 
@@ -163,6 +182,8 @@ int main(void)
   MX_USART2_UART_Init();
   MX_DAC_Init();
   /* USER CODE BEGIN 2 */
+  // MX_I2C1_Init();
+  // MX_ADC_Init();
 
   // GenerateGoldTables();
   BuildPacket();
@@ -210,7 +231,7 @@ int main(void)
   }
   else
   {
-    char timer_msg[] = "Timer 6 started - 1kHz sine wave on PA4\r\n";
+    char timer_msg[] = "Timer 6 started - 1kHz sine wave on PA4- test\r\n";
     HAL_UART_Transmit(&huart2, (uint8_t *)timer_msg, sizeof(timer_msg) - 1, HAL_MAX_DELAY);
   }
 
@@ -242,6 +263,37 @@ int main(void)
     //   char status_msg[] = "DMA sine wave should be running...\r\n";
     //   HAL_UART_Transmit(&huart2, (uint8_t *)status_msg, sizeof(status_msg) - 1, HAL_MAX_DELAY);
     // }
+
+    // // === NEW: I2C example (WHO_AM_I @ 0x0F)
+    // const uint8_t WHOAMI_REG = 0x0F;
+    // const uint16_t DEV_ADDR_7B = 0x6A; // change to your sensor's 7-bit address
+    // uint8_t who = 0x00;
+    // if (I2C_ReadRegs(DEV_ADDR_7B, WHOAMI_REG, &who, 1) == 0)
+    // {
+    //   char msg[64];
+    //   int n = snprintf(msg, sizeof(msg), "I2C 0x%02X WHO_AM_I=0x%02X\r\n", DEV_ADDR_7B, who);
+    //   HAL_UART_Transmit(&huart2, (uint8_t *)msg, n, HAL_MAX_DELAY);
+    // }
+    // else
+    // {
+    //   char msg[] = "I2C read failed\r\n";
+    //   HAL_UART_Transmit(&huart2, (uint8_t *)msg, sizeof(msg) - 1, HAL_MAX_DELAY);
+    // }
+
+    // // === NEW: ADC example on PA0 (ADC_CHANNEL_0)
+    // uint32_t vref_mV = Read_Vref_mV();
+    // uint32_t vout_mV = ADC_Channel_mV(ADC_CHANNEL_0, vref_mV);
+
+    // // Replace with your actual divider values:
+    // const float Rhigh = 100000.0f; // ohms (top resistor to Vin)
+    // const float Rlow = 100000.0f;  // ohms (bottom to GND)
+    // float vin_V = Divider_InputVoltage_V((float)vout_mV, Rhigh, Rlow);
+
+    // char vmsg[96];
+    // int vn = snprintf(vmsg, sizeof(vmsg),
+    //                   "ADC: Vref=%lumV, Vout=%lumV on PA0 → Vin=%.3f V\r\n",
+    //                   (unsigned long)vref_mV, (unsigned long)vout_mV, vin_V);
+    // HAL_UART_Transmit(&huart2, (uint8_t *)vmsg, vn, HAL_MAX_DELAY);
 
     HAL_Delay(1000); // Slower status updates
   }
@@ -502,41 +554,6 @@ void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *hdac)
   FillHalf(1);
 }
 
-// void Generate_Sine_Table(void)
-// {
-//   for (int i = 0; i < SAMPLES; i++)
-//   {
-//     float angle = (2.0f * M_PI * i) / SAMPLES;
-//     sine_wave[i] = (uint16_t)((sinf(angle) + 1.0f) * (DAC_MAX / 2));
-//   }
-// }
-
-// void GenerateGoldTables(void)
-// {
-//   // 4-sample 50kHz sinusoid @ 200ksps: [mid, max, mid, min]
-//   int16_t base_wave[4] = {2048, 4095, 2048, 0};
-
-//   int idx = 0;
-//   for (int i = 0; i < GOLD_LEN; i++)
-//   {
-//     for (int j = 0; j < 16; j++)
-//     {
-//       int carrier_idx = (j % 4);
-//       int16_t sample = base_wave[carrier_idx];
-
-//       // Multiply by goldcode chip (+1/-1)
-//       if (goldcode[i] == -1)
-//       {
-//         sample = 4095 - sample; // phase inversion
-//       }
-
-//       gold_pos[idx] = sample;        // for data bit = 1
-//       gold_neg[idx] = 4095 - sample; // for data bit = 0
-//       idx++;
-//     }
-//   }
-// }
-
 static void BuildPacket(void)
 {
   for (int i = 0; i < 64; i++)
@@ -631,6 +648,152 @@ static void FillHalf(int half_index)
     }
   }
 }
+
+// // === NEW: I2C1 on PB8 (SCL), PB9 (SDA), 100 kHz
+// void MX_I2C1_Init(void)
+// {
+//   __HAL_RCC_GPIOB_CLK_ENABLE();
+//   __HAL_RCC_I2C1_CLK_ENABLE();
+
+//   GPIO_InitTypeDef GPIO_InitStruct = {0};
+//   GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9;
+//   GPIO_InitStruct.Mode = GPIO_MODE_AF_OD; // open-drain
+//   GPIO_InitStruct.Pull = GPIO_PULLUP;     // ext pullups OK too
+//   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+//   GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
+//   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+//   hi2c1.Instance = I2C1;
+//   hi2c1.Init.Timing = 0x00303D5B; // ~100 kHz on L0 @ 16 MHz HSI (Cube default timing)
+//   hi2c1.Init.OwnAddress1 = 0;
+//   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+//   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+//   hi2c1.Init.OwnAddress2 = 0;
+//   hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+//   hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+//   hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+//   if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+//     Error_Handler();
+
+//   // Enable analog filter, leave digital filter off
+//   if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+//     Error_Handler();
+//   if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
+//     Error_Handler();
+// }
+
+// // === NEW: ADC1 single-ended, software trigger; example channel: PA0 (ADC_IN0)
+// void MX_ADC_Init(void)
+// {
+//   __HAL_RCC_ADC1_CLK_ENABLE();
+//   __HAL_RCC_GPIOA_CLK_ENABLE();
+
+//   // PA0 as analog for divider sense
+//   GPIO_InitTypeDef GPIO_InitStruct = {0};
+//   GPIO_InitStruct.Pin = GPIO_PIN_0;
+//   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+//   GPIO_InitStruct.Pull = GPIO_NOPULL;
+//   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+//   hadc.Instance = ADC1;
+//   hadc.Init.OversamplingMode = DISABLE;
+//   hadc.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1; // L0: async clock
+//   hadc.Init.Resolution = ADC_RESOLUTION_12B;
+//   hadc.Init.SamplingTime = ADC_SAMPLETIME_160CYCLES_5; // stable for high source impedance
+//   hadc.Init.ScanConvMode = ADC_SCAN_DIRECTION_FORWARD;
+//   hadc.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+//   hadc.Init.ContinuousConvMode = DISABLE;
+//   hadc.Init.DiscontinuousConvMode = DISABLE;
+//   hadc.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+//   hadc.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+//   hadc.Init.DMAContinuousRequests = DISABLE;
+//   hadc.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+//   hadc.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+//   hadc.Init.LowPowerAutoWait = DISABLE;
+//   hadc.Init.LowPowerFrequencyMode = DISABLE;
+//   hadc.Init.LowPowerAutoPowerOff = DISABLE;
+
+//   if (HAL_ADC_Init(&hadc) != HAL_OK)
+//     Error_Handler();
+
+//   // Enable Vrefint channel
+//   __HAL_ADC_ENABLE(&hadc);
+// }
+
+// // === NEW: I2C register helpers (7-bit addr, mem read/write)
+// int I2C_ReadRegs(uint16_t dev7b, uint8_t reg, uint8_t *data, uint16_t len)
+// {
+//   // dev7b is 7-bit (e.g., 0x6A), HAL expects 7-bit << 1 internally
+//   if (HAL_I2C_Mem_Read(&hi2c1, (dev7b << 1), reg, I2C_MEMADD_SIZE_8BIT, data, len, 100) == HAL_OK)
+//     return 0;
+//   return -1;
+// }
+
+// int I2C_WriteRegs(uint16_t dev7b, uint8_t reg, const uint8_t *data, uint16_t len)
+// {
+//   if (HAL_I2C_Mem_Write(&hi2c1, (dev7b << 1), reg, I2C_MEMADD_SIZE_8BIT, (uint8_t *)data, len, 100) == HAL_OK)
+//     return 0;
+//   return -1;
+// }
+
+// // === NEW: Raw ADC read from a single channel
+// uint16_t ADC_ReadRaw(uint32_t channel)
+// {
+//   ADC_ChannelConfTypeDef sConfig = {0};
+//   sConfig.Channel = channel;
+//   sConfig.Rank = ADC_RANK_CHANNEL_NUMBER;
+//   // sConfig.SamplingTime = ADC_SAMPLETIME_160CYCLES_5;
+//   if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
+//     Error_Handler();
+
+//   if (HAL_ADC_Start(&hadc) != HAL_OK)
+//     Error_Handler();
+//   if (HAL_ADC_PollForConversion(&hadc, 5) != HAL_OK)
+//     Error_Handler();
+//   uint16_t val = (uint16_t)HAL_ADC_GetValue(&hadc);
+//   HAL_ADC_Stop(&hadc);
+//   return val;
+// }
+
+// // === NEW: Vref compensation (uses factory calibration @ 3.0 V on L0)
+// // L0 VREFINT calibration address: 0x1FF80078 (16-bit)
+// #ifndef VREFINT_CAL_ADDR
+// #define VREFINT_CAL_ADDR ((uint16_t *)(0x1FF80078U))
+// #endif
+
+// uint32_t Read_Vref_mV(void)
+// {
+//   // Measure internal Vrefint channel
+//   // On L0, Vrefint channel is ADC_CHANNEL_17
+//   // Factory calibration is at Vdda = 3.0V
+//   const uint16_t vrefint_cal = *VREFINT_CAL_ADDR; // at 3.0 V
+//   uint16_t vrefint_adc = 0;
+
+//   // Enable Vrefint
+//   __HAL_ADC_ENABLE(&hadc);
+//   vrefint_adc = ADC_ReadRaw(ADC_CHANNEL_VREFINT);
+
+//   // Vdda (mV) = 3000 * VREFINT_CAL / VREFINT_DATA
+//   if (vrefint_adc == 0)
+//     return 3300;
+//   uint32_t vdda_mV = (3000UL * (uint32_t)vrefint_cal) / (uint32_t)vrefint_adc;
+//   return vdda_mV;
+// }
+
+// // === NEW: Convert an ADC channel reading to mV with Vref compensation
+// uint32_t ADC_Channel_mV(uint32_t channel, uint32_t vref_mV)
+// {
+//   uint16_t raw = ADC_ReadRaw(channel);
+//   return (uint32_t)((uint64_t)raw * vref_mV / 4095ULL);
+// }
+
+// // === NEW: Solve resistor divider input voltage (Vin) from measured Vout
+// // Vin = Vout * (Rhigh + Rlow) / Rlow
+// float Divider_InputVoltage_V(float vout_mV, float Rhigh_ohm, float Rlow_ohm)
+// {
+//   return (vout_mV * (Rhigh_ohm + Rlow_ohm) / Rlow_ohm) / 1000.0f;
+// }
+
 /* USER CODE END 4 */
 
 /**
