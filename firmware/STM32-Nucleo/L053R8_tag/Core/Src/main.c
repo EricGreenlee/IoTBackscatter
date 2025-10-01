@@ -24,7 +24,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-#include "precomputed_samples.h"
+#include "precomputed_samples_GC0.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -295,6 +295,7 @@ int main(void)
 //   }
 // }
 
+// custom clock config to increase the maximum stable DAC rate
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
