@@ -132,11 +132,16 @@ C_INCLUDES =  \
 -IDrivers/CMSIS/Device/ST/STM32L0xx/Include \
 -IDrivers/CMSIS/Include
 
+# CPUFLAGS := -mcpu=cortex-m0plus -mthumb
 
 # compile gcc flags
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
 
 CFLAGS += $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
+
+# CFLAGS   += $(CPUFLAGS) -O2 -ffunction-sections -fdata-sections
+# ASFLAGS  += $(CPUFLAGS)
+# LDFLAGS  += $(CPUFLAGS) -Wl,--gc-sections
 
 ifeq ($(DEBUG), 1)
 CFLAGS += -g -gdwarf-2
@@ -176,8 +181,9 @@ vpath %.S $(sort $(dir $(ASMM_SOURCES)))
 OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(ASMMC_SOURCES:.c=.o)))
 vpath %.S $(sort $(dir $(ASMMC_SOURCES)))
 
-$(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR) 
+$(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR)
 	$(CC) -c $(CFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst)) $< -o $@
+# 	$(CC) $(CFLAGS) -c $(CFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst)) $< -o $@
 
 $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
 	$(AS) -c $(CFLAGS) $< -o $@
