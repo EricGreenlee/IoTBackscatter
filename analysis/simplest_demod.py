@@ -94,9 +94,7 @@ def decimate_fir(x, fs, q):
     return y, fs/q
 
 #read signal
-# fname = "local_samples/usrp_n210_20251002_173805_915MHz_1.000Msps_38.0dB_1000000samps.npy" #constant sinusoid at 50kHz
-# fname = "local_samples/usrp_n210_20251002_184322_915MHz_1.000Msps_38.0dB_1000000samps.npy" #DBPSK, 80 bits at 12500bps
-fname = "local_samples/usrp_n210_20251002_185527_915MHz_1.000Msps_38.0dB_1000000samps.npy" #alternating 0's and 1's
+fname = "local_samples/usrp_n210_20251003_143438_915MHz_1.000Msps_38.0dB_1000000samps.npy"
 
 try:
     samples = np.load(fname)
@@ -117,7 +115,7 @@ plt_time_fft(samples, sample_rate_hz = samplerate_hz, title_prefix= "Raw input: 
     
     
 #mix to center frequency
-manual_mix_freq_hz = -65.45e3
+manual_mix_freq_hz = -62.45e3
 proc_samples = mix(samples, samplerate_hz=samplerate_hz, mix_freq_hz=manual_mix_freq_hz)
 
 plt_time_fft(proc_samples, sample_rate_hz = samplerate_hz, title_prefix= f"Mixed samples to {manual_mix_freq_hz}: ")
@@ -192,10 +190,40 @@ def dpsk_diff_detect(sym):
 
 # === 5) Sliding preamble search over 4 phases; pick best ===
 # Map bits -> {+1,-1} so we can correlate with a {+1/-1} template.
-def bits_to_pm1(b):  # 0→+1, 1→−1
-    return 1 - 2*b
+def bits_to_pm1(bits):  # 0→-1, 1→+1
+    a = np.asarray(bits).astype(np.int8).reshape(-1)  # force flat numeric array
+    return (2*a - 1).astype(np.int8)
 
-template_pm1 = bits_to_pm1(PREAMBLE_TEMPLATE_BITS)  # all -1's for all-1 preamble
+def dbpsk_to_bpsk(d_seq, init_symbol=1):
+    """Convert differential bits (0=no flip, 1=flip) to BPSK ±1 symbols"""
+    bpsk = []
+    sym = init_symbol
+    for b in d_seq:
+        if b == 1:
+            sym = -sym   # flip
+        # if b == 0: sym stays the same
+        bpsk.append(sym)
+    return bpsk
+
+dbpsk_preamble_tag = np.array([1,0,1,0,0,0,0,1,1,1,1,0,1,1,0,0,
+              0,1,1,1,1,0,0,1,1,0,1,1,0,0,0,1,
+              1,1,0,0,1,1,1,1,0,0,1,0,1,0,0,1,
+              1,0,1,1,1,0,0,1,0,1,1,0,1,0,0,1], dtype=np.int8)
+
+bpsk_preamble_tag = dbpsk_to_bpsk(dbpsk_preamble_tag, init_symbol=1)
+print(f"Preamble bits undifferentiated: {bpsk_preamble_tag}")
+template_pm1 = dbpsk_preamble_tag*2-1
+# bin_bpsk_preamble_tag = bpsk_preamble_tag*2-1
+# print(bin_bpsk_preamble_tag)
+
+dbpsk_payload_tag = np.array([1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0], dtype=np.int8);
+bpsk_payload = dbpsk_to_bpsk(dbpsk_preamble_tag )
+print(f"Payload bits undifferentiated: {bpsk_payload}")
+
+# plt.show()
+
+# template_pm1 = bits_to_pm1(PREAMBLE_TEMPLATE_BITS)  # all -1's for all-1 preamble
+
 
 best = None
 for ph in range(4):
