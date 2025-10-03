@@ -35,11 +35,7 @@ formatter = logging.Formatter('%(levelname)s: %(message)s')
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
-samplerate_hz = 1000000
-chiprate_hz = 12500
-gc_len = len(GCs[0])
-datarate_hz = chiprate_hz/gc_len
-target_sps = samplerate_hz /chiprate_hz
+
 
 num_gcs = len(GCs)
 
@@ -520,11 +516,17 @@ def estimate_snr(sig):
 #L053R8 tag (better clock + buffer), 50khz carrier, 80us per bit, proper packet, 0.4m away, GC0
 # fname = "../python/src/cloud_samples/usrp_n210_20250924_134913_915MHz_1.000Msps_50.0dB_18000000samps.npy"
 
+#L053R8 tag (better clock + buffer), 100khz carrier, 80us per bit, proper packet, 0.4m away, GC0
+# fname = "../python/src/cloud_samples/usrp_n210_20251002_141525_915MHz_0.200Msps_38.0dB_1000000samps.npy"
+fname = "local_samples/usrp_n210_20251002_165049_915MHz_0.200Msps_38.0dB_1000000samps.npy"
+# fname = "local_samples/usrp_n210_20251002_165914_915MHz_0.200Msps_38.0dB_1000000samps.npy"
+fname = "local_samples/usrp_n210_20251002_170803_915MHz_1.000Msps_38.0dB_5000000samps.npy"
+
 #L053R8 tag (better clock + buffer), 50khz carrier, 80us per bit, proper packet, 2m away, GC0
-fname = "../python/src/cloud_samples/usrp_n210_20250924_141416_915MHz_1.000Msps_50.0dB_18000000samps.npy"
+# fname = "../python/src/cloud_samples/usrp_n210_20250924_141416_915MHz_1.000Msps_50.0dB_18000000samps.npy"
 
 try:
-    samples = np.load(fname)
+    samples = np.load(fname, allow_pickle=True)
     logger.info(f"Loaded {len(samples)} samples from {fname}")
 except FileNotFoundError:
     logger.error(f"File not found: {fname}")
@@ -532,10 +534,21 @@ except FileNotFoundError:
 except Exception as e:
     logger.error(f"Error loading samples from {fname}: {e}")
     
-target_input_sps = 80
+samplerate_hz = 1000000
+chiprate_hz = 12500
+# samplerate_hz = 200000
+# chiprate_hz = 12500
+
+gc_len = len(GCs[0])
+datarate_hz = chiprate_hz/gc_len
+target_sps = int(samplerate_hz /chiprate_hz)
+    
+target_input_sps = target_sps #80
 gc_n = 0
 
-start_index = 1220000 + 1*80*gc_len*target_input_sps
+# start_index = 1220000 + 0*80*gc_len*target_input_sps
+# stop_index = start_index + 100*gc_len*target_input_sps
+start_index = 0 + 1*90*gc_len*target_input_sps
 stop_index = start_index + 100*gc_len*target_input_sps
 # stop_index = start_index + 10*gc_len*target_input_sps
 
@@ -554,23 +567,26 @@ plt_time_fft(proc, sample_rate_hz=samplerate_hz, title_prefix="Pre processing: "
 # proc = dc_block_iir(proc, r=0.995)
 
 # 1) Mix to rough center (bring near baseband)
-offset_freq_hz = -123.3e3
+# offset_freq_hz = -123.3e3
+# offset_freq_hz = -77.5e3
+offset_freq_hz = -466e3
+# offset_freq_hz = -76.5e3
 proc = mix(proc, offset_freq_hz, samplerate_hz)
 logger.info(f"Mixed to {offset_freq_hz:+.1f} Hz")
 
 # 2) Narrow LPF ~1.2–1.5 × chiprate (keep spectrum, reject close interferers)
-proc = lpf_iir(proc, cutoff_hz=chiprate_hz*1.5, fs_hz=samplerate_hz, order=5)
+proc = lpf_iir(proc, cutoff_hz=chiprate_hz*0.55, fs_hz=samplerate_hz, order=5)
 
 plt_time_fft(proc, sample_rate_hz=samplerate_hz, title_prefix="Post filter: ", peak_threshold= 10)
 
 
-
+# plt.show()
 
 # # 3) DC block (light) BEFORE correlation so DC won’t bias the normalized metric
 # proc = dc_block_iir(proc, r=0.995)
 
 # 4) Normalized GC search on a window → fine Δf
-test_win = proc[10*gc_len*target_input_sps : 20*gc_len*target_input_sps]
+test_win = proc[10*gc_len*target_input_sps : 50*gc_len*target_input_sps]
 max_freq_dev_hz = 1000
 freq_step_hz     = 100
 peak_thresh      = 0.05

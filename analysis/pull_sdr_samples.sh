@@ -10,8 +10,8 @@ HACKRF_PID_FILE="/tmp/hackrf_transmitter.pid"
 
 # Start HackRF transmitter in background and save its PID
 echo "Starting HackRF transmitter..."
-hackrf_transfer -f 914850000 -x 47 -c 127 -a 1 &
-# hackrf_transfer -f 914840800 -x 47 -c 127 -a 1 &
+hackrf_transfer -f 914900000 -x 47 -c 127 -a 1 &
+# hackrf_transfer -f 914950000 -x 47 -c 127 -a 1 &
 # hackrf_transfer -f 914865800 -x 47 -c 127 -a 1 &
 HACKRF_PID=$!
 echo $HACKRF_PID > $HACKRF_PID_FILE
@@ -22,7 +22,7 @@ sleep 2
 
 # Start USRP N210 receiver in foreground (blocks until complete)
 echo "Starting USRP N210 receiver..."
-python3 USRP_N210_RX_samples.py --freq 915e6 --rate 2e5 --gain 38 --num_samps 1000000 --plot
+python3 USRP_N210_RX_samples.py --freq 915e6 --rate 10e5 --gain 38 --num_samps 1000000 --plot
 # python3 USRP_N210_RX_samples.py --freq 915e6 --rate 1e6 --gain 50 --num_samps 18000000 --plot
 
 # When receiver finishes, stop the HackRF transmitter
