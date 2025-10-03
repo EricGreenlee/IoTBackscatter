@@ -8,20 +8,21 @@
 // #include "precomputed_samples_GC0.h"
 
 // ===== Waveform synthesis at 800 kS/s with 100 kHz subcarrier =====
-#define FS_DAC 800000u                 // DAC sample rate
-#define F_SC 100000u                   // subcarrier (kept coherent with cycles/chip)
-#define SPP 8                          // samples per subcarrier period (power of 2)
+#define FS_DAC 400000u                 // DAC sample rate
+#define F_SC 50000u                    // subcarrier (kept coherent with cycles/chip)
+#define SPP (FS_DAC / F_SC)            // samples per subcarrier period (power of 2)
 #define CYCLES_PER_CHIP 4              // integer cycles/chip for continuous phase
 #define SPCHIP (SPP * CYCLES_PER_CHIP) // samples per chip (32)
 #define IDLE_SAMPLES_PER_BIT (SPCHIP * GOLD_LEN)
 
 // Symbol/chip structure (unchanged Gold length)
-#define GOLD_LEN 127
+// #define GOLD_LEN 127
+#define GOLD_LEN 1
 
 // DAC scaling
 #define DAC_MID 2048
-// #define DAC_AMP 1800 // leave headroom; adjust to taste
-#define DAC_AMP 800
+#define DAC_AMP 1800 // leave headroom; adjust to taste
+// #define DAC_AMP 2000
 
 // Optional envelope pulse shaping (RRC later)
 #define USE_RRC 0 // 0=rectangular envelope (fast memcpy), 1=RRC (envelope FIR)
@@ -32,40 +33,67 @@ extern const float rrc_taps[RRC_TAPS]; // put your taps in a separate .c later
 const float rrc_taps[RRC_TAPS] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 
 // #define SYMBOL_SAMPLES (GOLD_LEN * 16)
-#define BUF_SAMPLES 2048
+#define BUF_SAMPLES 1280
+// #define BUF_SAMPLES 128
 #define HALF_SAMPLES (BUF_SAMPLES / 2)
-#define IDLE_BITS 80
+#define IDLE_BITS 10
 
-const int preamble[64] = {
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0};
+// #define nbits_pre 4
+#define nbits_pre 64
 // const int preamble[64] = {
+//     1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0,
+//     1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0,
+//     1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0,
+//     1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0};
+// const int preamble[nbits_pre] = {
 //     1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
 //     1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
 //     1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
 //     1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
+const int preamble[nbits_pre] = {
+    1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0,
+    0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1,
+    1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 1,
+    1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1}
 // const int preamble[64] = {
 //     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 //     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 //     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 //     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-const int payload[16] = {0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1};
+
+// const int preamble[nbits_pre] = {
+//     1, 0, 1, 0};
+
+// #define nbits_payload 4
+#define nbits_payload 16
+
+// const int payload[nbits_payload] = {0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1};
+const int payload[nbits_payload] = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
 // const int payload[16] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 
-static int packet_bits[80];
+// const int payload[nbits_payload] = {1, 1, 1, 1};
+
+// static int packet_bits[80];
+static int packet_bits[nbits_pre + nbits_payload];
 static uint16_t dma_buf[BUF_SAMPLES]; // 4 KB
 
 // ±1 Gold sequence (use your existing contents)
 // extern const int8_t gold[GOLD_LEN];  // fill in precomputed ±1 values
-const int8_t gold[GOLD_LEN] = {
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, 1, 1, -1,
-    -1, -1, 1, 1, -1, 1, 1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, -1, 1, 1,
-    -1, -1, 1, -1, 1, 1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, -1, 1, 1, 1,
-    1, 1, 1, 1, -1, -1, 1, 1, 1, 1, 1, 1, -1, 1, 1, -1, 1, -1, -1, 1,
-    1, 1, 1, 1, -1, 1, -1, 1, -1, -1, 1, 1, -1, 1, -1, -1, 1, 1, 1, 1,
-    1, 1, -1, -1, 1, -1, 1, 1, -1};
+// const int8_t gold[GOLD_LEN] = {
+//     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, 1, 1, -1,
+//     -1, -1, 1, 1, -1, 1, 1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, -1, 1, 1,
+//     -1, -1, 1, -1, 1, 1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, -1, 1, 1, 1,
+//     1, 1, 1, 1, -1, -1, 1, 1, 1, 1, 1, 1, -1, 1, 1, -1, 1, -1, -1, 1,
+//     1, 1, 1, 1, -1, 1, -1, 1, -1, -1, 1, 1, -1, 1, -1, -1, 1, 1, 1, 1,
+//     1, 1, -1, -1, 1, -1, 1, 1, -1};
+
+// const int8_t gold[GOLD_LEN] = {
+//     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+
+const int8_t gold[GOLD_LEN] = {1};
 
 // Fast path: precomputed per-chip waveforms (rectangular envelope)
 static uint16_t CHIP_POS[SPCHIP];
@@ -73,6 +101,8 @@ static uint16_t CHIP_NEG[SPCHIP];
 
 // Optional: tiny 8-pt sine for constructing CHIP_POS/NEG
 static const int16_t SIN8[SPP] = {0, 707, 1000, 707, 0, -707, -1000, -707};
+// static const int16_t SIN16[SPP] = {0, 382, 707, 924, 1000, 924, 707, 382, 0, -382, -707, -924, -1000, -924, -707, -382};
+// static const int16_t SIN4[SPP] = {0, 1000, 0, -1000};
 
 // Streaming state
 static int bit_idx = 0;   // 0..79
@@ -105,7 +135,7 @@ void MX_TIM6_Init(void);
 void MX_DMA_Init(void);
 void HAL_DAC_ConvHalfCpltCallbackCh1(DAC_HandleTypeDef *hdac);
 void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *hdac);
-static void BuildPacket(void);
+static void BuildPacket(int pre_len, int packet_len);
 static void FillHalf(int half_index);
 static void restart_packet_stream(void);
 static void enter_idle(void);
@@ -128,7 +158,7 @@ int main(void)
     // MX_ADC_Init();
 
     // GenerateGoldTables();
-    BuildPacket();
+    BuildPacket(nbits_pre, nbits_payload);
     BuildChipWave();
     restart_packet_stream(); // <— add this line
 
@@ -145,9 +175,12 @@ int main(void)
     }
     else
     {
-        char timer_msg[] = "Timer 6 started - 1kHz sine wave on PA4- test\r\n";
+        char timer_msg[] = "Timer 6 started\r\n";
         HAL_UART_Transmit(&huart2, (uint8_t *)timer_msg, sizeof(timer_msg) - 1, HAL_MAX_DELAY);
     }
+
+    // char packet_msg[] = "packet_bits: " + str(packet_bits) + "\r\n";
+    // HAL_UART_Transmit(&huart2, (uint8_t *)packet_msg, sizeof(packet_msg) - 1, HAL_MAX_DELAY);
 
     while (1)
     {
@@ -251,12 +284,12 @@ void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *hdac)
     FillHalf(1);
 }
 
-static void BuildPacket(void)
+static void BuildPacket(int pre_len, int packet_len)
 {
-    for (int i = 0; i < 64; i++)
+    for (int i = 0; i < pre_len; i++)
         packet_bits[i] = preamble[i];
-    for (int i = 0; i < 16; i++)
-        packet_bits[64 + i] = payload[i];
+    for (int i = 0; i < packet_len; i++)
+        packet_bits[pre_len + i] = payload[i];
 }
 
 /**
@@ -378,7 +411,9 @@ static void BuildChipWave(void)
     {
         for (int i = 0; i < SPP; ++i, ++k)
         {
+            // int32_t v = DAC_MID + (int32_t)DAC_AMP * SIN16[i] / 1000;
             int32_t v = DAC_MID + (int32_t)DAC_AMP * SIN8[i] / 1000;
+            // int32_t v = DAC_MID + (int32_t)DAC_AMP * SIN4[i] / 1000;
             if (v < 0)
                 v = 0;
             else if (v > 4095)
@@ -416,7 +451,7 @@ static void advance_chip_bit_state(void)
     if (++chip_idx == GOLD_LEN)
     {
         chip_idx = 0;
-        if (++bit_idx == 80)
+        if (++bit_idx == nbits_pre + nbits_payload)
         {                 // packet done → idle or restart
             enter_idle(); // or bit_idx=0; if you prefer continuous loop
         }
