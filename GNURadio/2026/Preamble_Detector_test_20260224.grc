@@ -1,0 +1,337 @@
+options:
+  parameters:
+    author: backscatter
+    catch_exceptions: 'True'
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: ''
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: qt_gui
+    hier_block_src_path: '.:'
+    id: Preamble_Detector_test_20260224
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: Not titled yet
+    window_size: (1000,1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 8]
+    rotation: 0
+    state: enabled
+
+blocks:
+- name: preamble
+  id: variable
+  parameters:
+    comment: ''
+    value: '"AAAAAAAAAAAAAAAA"'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [280, 112.0]
+    rotation: 0
+    state: enabled
+- name: samp_rate
+  id: variable
+  parameters:
+    comment: ''
+    value: '32000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [184, 12]
+    rotation: 0
+    state: enabled
+- name: blocks_file_source_0
+  id: blocks_file_source
+  parameters:
+    affinity: ''
+    alias: ''
+    begin_tag: pmt.PMT_NIL
+    comment: ''
+    file: /home/backscatter/Documents/Backscatter/GNURadio/2026/Simple_demod_output_20260224.txt
+    length: '0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    repeat: 'True'
+    type: byte
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [32, 168.0]
+    rotation: 0
+    state: enabled
+- name: blocks_file_source_1
+  id: blocks_file_source
+  parameters:
+    affinity: ''
+    alias: ''
+    begin_tag: pmt.PMT_NIL
+    comment: ''
+    file: /home/backscatter/Documents/Backscatter/GNURadio/2026/test_multiple_packets.bin
+    length: '0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    repeat: 'False'
+    type: byte
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [16, 320.0]
+    rotation: 0
+    state: disabled
+- name: epy_block_1
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nPreamble detector and payload\
+      \ extractor for backscatter signals.\nSearches for 64-bit preamble and extracts\
+      \ following 16-bit payload.\nOutputs to both file and QT GUI number sink.\n\"\
+      \"\"\n\nimport numpy as np\nfrom gnuradio import gr\n\nSTATE_SEARCH = 0\nSTATE_PAYLOAD\
+      \ = 1\n\nclass blk(gr.basic_block):\n\n    def __init__(self, preamble_hex=\"\
+      AAAAAAAAAAAAAAAA\"):\n        \"\"\"\n        Preamble detector and payload\
+      \ extractor\n\n        Args:\n            preamble_hex: 64-bit preamble as hex\
+      \ string (16 hex characters)\n        \"\"\"\n        gr.basic_block.__init__(\n\
+      \            self,\n            name='Preamble Detector and Payload Extractor',\n\
+      \            in_sig=[np.byte],\n            out_sig=[np.byte, np.float32]  #\
+      \ bits output, payload value output\n        )\n\n        # Convert hex preamble\
+      \ to bit array (64 bits)\n        self.preamble_bits = self.hex_to_bits(preamble_hex)\n\
+      \n        # Create inverted preamble for 180-degree phase detection\n      \
+      \  self.inverted_preamble_bits = [1-b for b in self.preamble_bits]\n\n     \
+      \   # State variables\n        self.payload_count = 0\n\n        # File output\n\
+      \        try:\n            self.output_file = open('/home/backscatter/Documents/Backscatter/GNURadio/2026/sync_payload_output.txt',\
+      \ 'w')\n        except Exception as e:\n            print(f\"Could not open\
+      \ output file: {e}\")\n            self.output_file = None\n\n        print(f\"\
+      Preamble detector initialized with 64-bit preamble\")\n        print(f\"Preamble\
+      \ hex: {preamble_hex}\")\n\n        self.start_search()\n\n    def hex_to_bits(self,\
+      \ hex_string):\n        \"\"\"Convert hex string to list of bits (MSB first)\"\
+      \"\"\n        # Remove any whitespace or 0x prefix\n        hex_string = hex_string.replace('\
+      \ ', '').replace('0x', '')\n\n        bits = []\n        for hex_char in hex_string:\n\
+      \            val = int(hex_char, 16)\n            # Convert to 4 bits (MSB first)\n\
+      \            for i in range(3, -1, -1):\n                bits.append((val >>\
+      \ i) & 1)\n        return bits\n\n    def general_work(self, input_items, output_items):\n\
+      \        \"\"\"Main processing function\"\"\"\n        input_bits = input_items[0]\n\
+      \        output_bits = output_items[0] if len(output_items) > 0 else None\n\
+      \        output_payload = output_items[1] if len(output_items) > 1 else None\n\
+      \n        added = 0\n        consumed = 0\n        to_consume = len(input_bits)\n\
+      \n        for i in range(to_consume):\n            bit = int(input_bits[i])\n\
+      \            consumed += 1\n\n            if self.state == STATE_SEARCH:\n \
+      \               # Shift in new bit to search buffer\n                self.search_bits\
+      \ = self.search_bits[1:] + [bit]\n\n                # Check for preamble match\
+      \ (normal)\n                if self.search_bits == self.preamble_bits:\n   \
+      \                 print(\"Preamble found (normal phase)\")\n               \
+      \     self.inverted = False\n                    self.start_payload_extraction()\n\
+      \n                # Check for preamble match (inverted)\n                elif\
+      \ self.search_bits == self.inverted_preamble_bits:\n                    print(\"\
+      Preamble found (inverted phase)\")\n                    self.inverted = True\n\
+      \                    self.start_payload_extraction()\n\n            elif self.state\
+      \ == STATE_PAYLOAD:\n                # Apply phase correction if needed\n  \
+      \              corrected_bit = bit if not self.inverted else (1 - bit)\n\n \
+      \               self.payload_bits.append(corrected_bit)\n\n                if\
+      \ output_bits is not None and added < len(output_bits):\n                  \
+      \  output_bits[added] = corrected_bit\n                    added += 1\n\n  \
+      \              # Check if we have collected 16 bits\n                if len(self.payload_bits)\
+      \ == 16:\n                    payload_value = self.process_payload()\n\n   \
+      \                 # Send payload value to second output\n                  \
+      \  if output_payload is not None and added < len(output_payload):\n        \
+      \                output_payload[added-1] = float(payload_value)\n\n        \
+      \            self.start_search()\n\n        self.consume_each(consumed)\n  \
+      \      return added\n\n    def start_search(self):\n        \"\"\"Reset to search\
+      \ state\"\"\"\n        self.state = STATE_SEARCH\n        self.inverted = False\n\
+      \        self.search_bits = [0] * 64  # 64-bit rolling buffer\n        self.payload_bits\
+      \ = []\n\n    def start_payload_extraction(self):\n        \"\"\"Switch to payload\
+      \ extraction state\"\"\"\n        self.state = STATE_PAYLOAD\n        self.payload_bits\
+      \ = []\n\n    def process_payload(self):\n        \"\"\"Process the extracted\
+      \ 16-bit payload\"\"\"\n        # Convert bits to integer value (MSB first)\n\
+      \        payload_value = 0\n        for i, bit in enumerate(self.payload_bits):\n\
+      \            payload_value += bit * (2 ** (15 - i))\n\n        self.payload_count\
+      \ += 1\n\n        # Write to file\n        if self.output_file:\n          \
+      \  self.output_file.write(f\"Payload {self.payload_count}: \")\n           \
+      \ self.output_file.write(''.join(map(str, self.payload_bits)))\n           \
+      \ self.output_file.write(f\" (Value: {payload_value})\\n\")\n            self.output_file.flush()\n\
+      \n        print(f\"Extracted payload {self.payload_count}: {payload_value} ({''.join(map(str,\
+      \ self.payload_bits))})\")\n\n        return payload_value\n\n    def __del__(self):\n\
+      \        \"\"\"Cleanup when block is destroyed\"\"\"\n        if hasattr(self,\
+      \ 'output_file') and self.output_file:\n            self.output_file.close()\n\
+      \n\n# Helper function for standalone testing\ndef test_preamble_detector():\n\
+      \    \"\"\"Test function for the preamble detector\"\"\"\n    # Example usage\n\
+      \    detector = blk(preamble_hex=\"DEADBEEFCAFEBABE\")  # 64-bit hex preamble\n\
+      \n    # Test data: preamble + payload\n    test_bits = detector.preamble_bits\
+      \ + [1,0,1,1,0,0,1,0,1,0,1,0,1,1,0,0]  # 16-bit payload\n\n    print(f\"Test\
+      \ input: {test_bits}\")\n\n    # Simulate processing\n    input_items = [np.array(test_bits,\
+      \ dtype=np.byte)]\n    output_items = [np.zeros(len(test_bits), dtype=np.byte),\n\
+      \                   np.zeros(len(test_bits), dtype=np.float32)]\n\n    detector.general_work(input_items,\
+      \ output_items)\n\nif __name__ == \"__main__\":\n    test_preamble_detector()\n"
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    preamble_hex: preamble
+  states:
+    _io_cache: '(''Preamble Detector and Payload Extractor'', ''blk'', [(''preamble_hex'',
+      "''AAAAAAAAAAAAAAAA''")], [(''0'', ''byte'', 1)], [(''0'', ''byte'', 1), (''1'',
+      ''float'', 1)], ''\n        Preamble detector and payload extractor\n\n        Args:\n            preamble_hex:
+      64-bit preamble as hex string (16 hex characters)\n        '', [])'
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [272, 232.0]
+    rotation: 0
+    state: enabled
+- name: qtgui_number_sink_0_0
+  id: qtgui_number_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    autoscale: 'False'
+    avg: '0'
+    color1: ("black", "black")
+    color10: ("black", "black")
+    color2: ("black", "black")
+    color3: ("black", "black")
+    color4: ("black", "black")
+    color5: ("black", "black")
+    color6: ("black", "black")
+    color7: ("black", "black")
+    color8: ("black", "black")
+    color9: ("black", "black")
+    comment: ''
+    factor1: '1'
+    factor10: '1'
+    factor2: '1'
+    factor3: '1'
+    factor4: '1'
+    factor5: '1'
+    factor6: '1'
+    factor7: '1'
+    factor8: '1'
+    factor9: '1'
+    graph_type: qtgui.NUM_GRAPH_NONE
+    gui_hint: ''
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    max: '65536'
+    min: '0'
+    name: '""'
+    nconnections: '1'
+    type: byte
+    unit1: ''
+    unit10: ''
+    unit2: ''
+    unit3: ''
+    unit4: ''
+    unit5: ''
+    unit6: ''
+    unit7: ''
+    unit8: ''
+    unit9: ''
+    update_time: '0.10'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [608, 168.0]
+    rotation: 0
+    state: enabled
+- name: qtgui_number_sink_0_0_0
+  id: qtgui_number_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    autoscale: 'False'
+    avg: '0'
+    color1: ("black", "black")
+    color10: ("black", "black")
+    color2: ("black", "black")
+    color3: ("black", "black")
+    color4: ("black", "black")
+    color5: ("black", "black")
+    color6: ("black", "black")
+    color7: ("black", "black")
+    color8: ("black", "black")
+    color9: ("black", "black")
+    comment: ''
+    factor1: '1'
+    factor10: '1'
+    factor2: '1'
+    factor3: '1'
+    factor4: '1'
+    factor5: '1'
+    factor6: '1'
+    factor7: '1'
+    factor8: '1'
+    factor9: '1'
+    graph_type: qtgui.NUM_GRAPH_NONE
+    gui_hint: ''
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    max: '65536'
+    min: '0'
+    name: '""'
+    nconnections: '1'
+    type: float
+    unit1: ''
+    unit10: ''
+    unit2: ''
+    unit3: ''
+    unit4: ''
+    unit5: ''
+    unit6: ''
+    unit7: ''
+    unit8: ''
+    unit9: ''
+    update_time: '0.10'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [576, 392.0]
+    rotation: 0
+    state: enabled
+
+connections:
+- [blocks_file_source_0, '0', epy_block_1, '0']
+- [blocks_file_source_1, '0', epy_block_1, '0']
+- [epy_block_1, '0', qtgui_number_sink_0_0, '0']
+- [epy_block_1, '1', qtgui_number_sink_0_0_0, '0']
+
+metadata:
+  file_format: 1
+  grc_version: 3.10.9.2

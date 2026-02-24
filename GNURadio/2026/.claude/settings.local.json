@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 Demodulation_to_payload_20260224.py)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
